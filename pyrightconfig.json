@@ -1,0 +1,19 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "executionEnvironments": [
+    {
+      "root": "backend/src",
+      "extraPaths": ["backend/src"]
+    },
+    {
+      "root": "backend",
+      "extraPaths": ["backend/src", "backend/tests"]
+    },
+    {
+      "root": "rider-dashboard",
+      "extraPaths": ["rider-dashboard"]
+    }
+  ]
+}

@@ -208,13 +208,16 @@ def create_order_atomic(
                     continue
                 raise TransactionConflictError("High booking contention, please retry.") from exc
 
-            if len(reasons) > 0 and reasons[0].get("Code") == "ConditionalCheckFailed":
-                raise SlotFullError("This time slot is full (15/15 orders).") from exc
-
+            # Check duplicate order before slot-full so retrying the 15th order reports DUPLICATE_ORDER
             if len(reasons) > 1 and reasons[1].get("Code") == "ConditionalCheckFailed":
                 raise DuplicateOrderError("This order request was already submitted.") from exc
 
+            if len(reasons) > 0 and reasons[0].get("Code") == "ConditionalCheckFailed":
+                raise SlotFullError("This time slot is full (15/15 orders).") from exc
+
             raise
+
+    raise TransactionConflictError("High booking contention, please retry.")
 
 
 def get_rider_orders(
@@ -357,3 +360,5 @@ def mark_order_delivered(
                 }
 
             raise
+
+    raise TransactionConflictError("Temporary write conflict, please retry.")
