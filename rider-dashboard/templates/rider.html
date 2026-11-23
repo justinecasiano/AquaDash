@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Rider Delivery List — AquaDash{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="controls-bar">
+    <div>
+      <h1 style="margin: 0; font-size: 1.35rem;">Delivery Rider Orders</h1>
+      <p style="margin: 0.2rem 0 0; color: #64748b; font-size: 0.875rem;">
+        Showing current / selected time slot orders with private subdivision home addresses.
+      </p>
+    </div>
+
+    <form method="get" action="{{ url_for('rider_dashboard') }}" class="controls-form">
+      <div>
+        <label for="date" style="display: block; font-size: 0.75rem; font-weight: 600; color: #64748b;">Date (PHT)</label>
+        <input id="date" name="date" type="date" value="{{ selected_date }}" class="input" style="width: auto; padding: 0.42rem 0.65rem;" />
+      </div>
+      <input type="hidden" name="slot" value="{{ selected_slot }}" />
+      <button type="submit" class="btn btn-outline">Load Date</button>
+    </form>
+  </div>
+
+  {% if slots %}
+  <div class="slot-pills">
+    {% for s in slots %}
+      <a
+        href="{{ url_for('rider_dashboard', date=selected_date, slot=s.slot_id) }}"
+        class="slot-pill {% if s.slot_id == selected_slot %}active{% endif %}"
+      >
+        <span>{{ s.label }}</span>
+        <span>({{ s.booked_count }}/{{ s.capacity }})</span>
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% if error_message %}
+  <div class="alert alert-error">{{ error_message }}</div>
+{% endif %}
+
+{% if slot_info %}
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Selected Slot</div>
+    <div style="font-size: 1.05rem; font-weight: 700; margin-top: 0.25rem;">{{ slot_info.label }}</div>
+    <div style="margin-top: 0.3rem;">
+      <span class="badge badge-{{ slot_info.status|lower }}">{{ slot_info.status }}</span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Orders Booked</div>
+    <div class="kpi-value">{{ slot_info.booked_count }} <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">/ {{ slot_info.capacity }}</span></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Pending / Delivered</div>
+    <div class="kpi-value">
+      <span style="color: #d97706;">{{ slot_info.pending_count }}</span>
+      <span style="font-size: 1rem; color: #94a3b8;">/</span>
+      <span style="color: #059669;">{{ slot_info.delivered_count }}</span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">5-Gal Jugs to Load</div>
+    <div class="kpi-value" style="color: #0284c7;">{{ slot_info.total_containers }}</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem;">
+    <h2 style="margin: 0; font-size: 1.05rem;">Household Deliveries ({{ orders|length }})</h2>
+    <a href="{{ url_for('rider_dashboard', date=selected_date, slot=selected_slot) }}" class="btn btn-outline">Refresh</a>
+  </div>
+
+  {% if orders %}
+  <div class="order-list">
+    {% for order in orders %}
+    <div class="order-card {% if order.status == 'DELIVERED' %}delivered{% endif %}">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span class="badge badge-{{ order.status|lower }}">{{ order.status }}</span>
+          <strong style="font-size: 0.95rem;">{{ order.customer_name }}</strong>
+          <span style="font-size: 0.8rem; color: #64748b;">#{{ order.order_id }}</span>
+        </div>
+
+        <div class="order-address">📍 {{ order.address }}</div>
+
+        <div class="order-meta">
+          <strong>{{ order.quantity }}</strong> × 5-gallon {{ 'container' if order.quantity == 1 else 'containers' }}
+          &nbsp;•&nbsp; 📞 {{ order.phone }}
+          {% if order.notes %}
+            &nbsp;•&nbsp; 📝 {{ order.notes }}
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        {% if order.status == 'PENDING' %}
+        <form method="post" action="{{ url_for('mark_delivered') }}" style="margin: 0">
+          <input type="hidden" name="date" value="{{ order.date }}" />
+          <input type="hidden" name="slot_id" value="{{ order.slot_id }}" />
+          <input type="hidden" name="order_id" value="{{ order.order_id }}" />
+          <button type="submit" class="btn btn-success">✓ Mark Delivered</button>
+        </form>
+        {% else %}
+        <div style="text-align: right; font-size: 0.82rem; color: #059669; font-weight: 600;">
+          Delivered ✓
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    No orders booked for <strong>{{ selected_date }}</strong> ({{ selected_slot }}) yet.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

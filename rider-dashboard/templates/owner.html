@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Owner Slot Capacity — AquaDash{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="controls-bar">
+    <div>
+      <h1 style="margin: 0; font-size: 1.35rem;">Owner Slot Fullness Overview</h1>
+      <p style="margin: 0.2rem 0 0; color: #64748b; font-size: 0.875rem;">
+        Monitor how full each time slot is for <strong>{{ selected_date }}</strong> (max 15 orders per slot).
+      </p>
+    </div>
+
+    <form method="get" action="{{ url_for('owner_dashboard') }}" class="controls-form">
+      <div>
+        <label for="date" style="display: block; font-size: 0.75rem; font-weight: 600; color: #64748b;">Date (PHT)</label>
+        <input id="date" name="date" type="date" value="{{ selected_date }}" class="input" style="width: auto; padding: 0.42rem 0.65rem;" />
+      </div>
+      <button type="submit" class="btn btn-outline">Load Date</button>
+    </form>
+  </div>
+</div>
+
+{% if error_message %}
+  <div class="alert alert-error">{{ error_message }}</div>
+{% endif %}
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Daily Orders Booked</div>
+    <div class="kpi-value">{{ totals.booked }} <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">/ {{ totals.capacity }}</span></div>
+    <div style="font-size: 0.78rem; color: #64748b;">{{ totals.utilization_pct }}% capacity used</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Total 5-Gal Jugs</div>
+    <div class="kpi-value" style="color: #0284c7;">{{ totals.containers }}</div>
+    <div style="font-size: 0.78rem; color: #64748b;">Containers to prepare</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Pending Deliveries</div>
+    <div class="kpi-value" style="color: #d97706;">{{ totals.pending }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Delivered</div>
+    <div class="kpi-value" style="color: #059669;">{{ totals.delivered }}</div>
+    <div style="font-size: 0.78rem; color: #64748b;">{{ totals.completion_pct }}% completed</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin: 0 0 1rem; font-size: 1.05rem;">Time Slots Capacity</h2>
+
+  <div class="order-list">
+    {% for s in slots %}
+    {% set pct = ((s.booked_count / s.capacity) * 100) | round | int if s.capacity else 0 %}
+    <div class="order-card" style="display: block;">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+          <strong style="font-size: 1rem;">{{ s.label }}</strong>
+          <span class="badge badge-{{ s.status|lower }}">{{ s.status }}</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem;">
+          <span><strong>{{ s.booked_count }} / {{ s.capacity }}</strong> orders ({{ pct }}%)</span>
+          <span><strong>{{ s.total_containers }}</strong> jugs</span>
+          <span>Pending: <strong style="color: #d97706;">{{ s.pending_count }}</strong> • Delivered: <strong style="color: #059669;">{{ s.delivered_count }}</strong></span>
+          <a href="{{ url_for('rider_dashboard', date=selected_date, slot=s.slot_id) }}" class="btn btn-outline" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">
+            View Orders
+          </a>
+        </div>
+      </div>
+
+      <div class="progress-track">
+        <div
+          class="progress-fill {% if s.status == 'FULL' %}full{% elif s.status == 'COMPLETED' %}completed{% endif %}"
+          style="width: {{ pct }}%;"
+        ></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
