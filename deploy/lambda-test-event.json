@@ -1,0 +1,16 @@
+{
+  "version": "2.0",
+  "routeKey": "GET /slots",
+  "rawPath": "/slots",
+  "headers": {
+    "accept": "application/json"
+  },
+  "requestContext": {
+    "stage": "$default",
+    "http": {
+      "method": "GET",
+      "path": "/slots"
+    }
+  },
+  "isBase64Encoded": false
+}
