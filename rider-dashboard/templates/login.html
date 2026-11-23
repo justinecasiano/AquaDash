@@ -1,42 +1,72 @@
 {% extends "base.html" %}
-{% block title %}Staff Login — AquaDash{% endblock %}
+{% block title %}Sign In — AquaDash Staff{% endblock %}
 
 {% block content %}
-<div class="login-shell">
-  <div class="card">
-    <h1 style="margin: 0 0 0.25rem; font-size: 1.35rem;">Staff Sign In</h1>
-    <p style="margin: 0 0 1.25rem; color: #64748b; font-size: 0.9rem;">
-      Authentication is required to protect private household delivery addresses.
-    </p>
+<div class="animate-fade-up mx-auto mt-8 max-w-md sm:mt-14">
+  <div class="rounded-2xl border border-zinc-200/80 bg-white p-7 shadow-sm sm:p-8">
+    <div class="mb-6 text-center">
+      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-zinc-950">Staff Sign In</h1>
+      <p class="mt-1 text-base text-zinc-500">Private delivery &amp; station portal</p>
+    </div>
 
-    <form method="post" action="{{ url_for('login') }}">
-      <div class="form-group">
-        <label for="role">Staff Role</label>
-        <select id="role" name="role" required>
-          <option value="rider" {% if selected_role == 'rider' %}selected{% endif %}>
-            Delivery Rider (Orders &amp; Delivery Marking)
-          </option>
-          <option value="owner" {% if selected_role == 'owner' %}selected{% endif %}>
-            Station Owner (Slot Fullness Overview)
-          </option>
-        </select>
+    <form method="post" action="{{ url_for('login') }}" class="space-y-5">
+      <div>
+        <span class="mb-2 block text-sm font-semibold text-zinc-700">Role</span>
+        <div class="grid grid-cols-2 gap-1.5 rounded-xl border border-zinc-200/80 bg-zinc-100/90 p-1">
+          <label class="cursor-pointer">
+            <input
+              type="radio"
+              name="role"
+              value="rider"
+              class="role-radio sr-only"
+              {% if selected_role != 'owner' %}checked{% endif %}
+            />
+            <span class="role-label flex h-10 items-center justify-center rounded-lg text-base font-semibold text-zinc-500 transition-all duration-150">
+              Rider
+            </span>
+          </label>
+          <label class="cursor-pointer">
+            <input
+              type="radio"
+              name="role"
+              value="owner"
+              class="role-radio sr-only"
+              {% if selected_role == 'owner' %}checked{% endif %}
+            />
+            <span class="role-label flex h-10 items-center justify-center rounded-lg text-base font-semibold text-zinc-500 transition-all duration-150">
+              Owner
+            </span>
+          </label>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="password">Staff Password</label>
+      <div>
+        <label for="password" class="mb-2 block text-sm font-semibold text-zinc-700">Password</label>
         <input
           id="password"
           name="password"
           type="password"
-          class="input"
           required
           autocomplete="current-password"
-          placeholder="Enter staff password"
+          placeholder="Enter password"
+          class="flex h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-base text-zinc-950 shadow-2xs transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 focus:outline-none"
         />
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem;">
-        Sign In
+      <button
+        type="submit"
+        class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-base font-semibold text-white shadow-xs transition hover:bg-zinc-800 active:scale-[0.98] cursor-pointer"
+      >
+        <span>Sign In</span>
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+        </svg>
       </button>
     </form>
   </div>

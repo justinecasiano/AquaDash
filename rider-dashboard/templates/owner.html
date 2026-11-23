@@ -1,83 +1,102 @@
 {% extends "base.html" %}
-{% block title %}Owner Slot Capacity — AquaDash{% endblock %}
+{% block title %}Owner Capacity — AquaDash{% endblock %}
 
 {% block content %}
-<div class="card">
-  <div class="controls-bar">
-    <div>
-      <h1 style="margin: 0; font-size: 1.35rem;">Owner Slot Fullness Overview</h1>
-      <p style="margin: 0.2rem 0 0; color: #64748b; font-size: 0.875rem;">
-        Monitor how full each time slot is for <strong>{{ selected_date }}</strong> (max 15 orders per slot).
-      </p>
-    </div>
-
-    <form method="get" action="{{ url_for('owner_dashboard') }}" class="controls-form">
-      <div>
-        <label for="date" style="display: block; font-size: 0.75rem; font-weight: 600; color: #64748b;">Date (PHT)</label>
-        <input id="date" name="date" type="date" value="{{ selected_date }}" class="input" style="width: auto; padding: 0.42rem 0.65rem;" />
-      </div>
-      <button type="submit" class="btn btn-outline">Load Date</button>
-    </form>
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight text-zinc-950">Owner Slot Fullness Overview</h1>
+    <p class="mt-1 text-base text-zinc-500">{{ selected_date }} · Max 15 orders per slot</p>
   </div>
+
+  <form method="get" action="{{ url_for('owner_dashboard') }}" class="flex items-center gap-2">
+    <input
+      id="date"
+      name="date"
+      type="date"
+      value="{{ selected_date }}"
+      onchange="this.form.submit()"
+      class="h-11 rounded-xl border border-zinc-200 bg-white px-3.5 text-base font-semibold text-zinc-950 shadow-2xs transition focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 focus:outline-none cursor-pointer"
+    />
+  </form>
 </div>
 
 {% if error_message %}
-  <div class="alert alert-error">{{ error_message }}</div>
+  <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-base font-medium text-rose-700">
+    {{ error_message }}
+  </div>
 {% endif %}
 
-<div class="kpi-grid">
-  <div class="kpi-card">
-    <div class="kpi-label">Daily Orders Booked</div>
-    <div class="kpi-value">{{ totals.booked }} <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">/ {{ totals.capacity }}</span></div>
-    <div style="font-size: 0.78rem; color: #64748b;">{{ totals.utilization_pct }}% capacity used</div>
+<!-- 4 Clean KPI Tiles -->
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs">
+    <div class="text-sm font-medium text-zinc-500">Booked</div>
+    <div class="mt-1.5 flex items-baseline gap-1.5">
+      <span class="text-3xl font-bold tracking-tight text-zinc-950">{{ totals.booked }}</span>
+      <span class="text-base font-medium text-zinc-400">/ {{ totals.capacity }}</span>
+      <span class="ml-auto text-sm font-semibold text-sky-700">{{ totals.utilization_pct }}%</span>
+    </div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Total 5-Gal Jugs</div>
-    <div class="kpi-value" style="color: #0284c7;">{{ totals.containers }}</div>
-    <div style="font-size: 0.78rem; color: #64748b;">Containers to prepare</div>
+
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 45ms;">
+    <div class="text-sm font-medium text-zinc-500">5-Gallon Jugs</div>
+    <div class="mt-1.5 text-3xl font-bold tracking-tight text-sky-700">{{ totals.containers }}</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Pending Deliveries</div>
-    <div class="kpi-value" style="color: #d97706;">{{ totals.pending }}</div>
+
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 90ms;">
+    <div class="text-sm font-medium text-zinc-500">Pending</div>
+    <div class="mt-1.5 text-3xl font-bold tracking-tight text-amber-600">{{ totals.pending }}</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Delivered</div>
-    <div class="kpi-value" style="color: #059669;">{{ totals.delivered }}</div>
-    <div style="font-size: 0.78rem; color: #64748b;">{{ totals.completion_pct }}% completed</div>
+
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 135ms;">
+    <div class="text-sm font-medium text-zinc-500">Delivered</div>
+    <div class="mt-1.5 flex items-baseline gap-1.5">
+      <span class="text-3xl font-bold tracking-tight text-emerald-600">{{ totals.delivered }}</span>
+      <span class="ml-auto text-sm font-semibold text-emerald-700">{{ totals.completion_pct }}%</span>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <h2 style="margin: 0 0 1rem; font-size: 1.05rem;">Time Slots Capacity</h2>
-
-  <div class="order-list">
-    {% for s in slots %}
-    {% set pct = ((s.booked_count / s.capacity) * 100) | round | int if s.capacity else 0 %}
-    <div class="order-card" style="display: block;">
-      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem;">
-        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-          <strong style="font-size: 1rem;">{{ s.label }}</strong>
-          <span class="badge badge-{{ s.status|lower }}">{{ s.status }}</span>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem;">
-          <span><strong>{{ s.booked_count }} / {{ s.capacity }}</strong> orders ({{ pct }}%)</span>
-          <span><strong>{{ s.total_containers }}</strong> jugs</span>
-          <span>Pending: <strong style="color: #d97706;">{{ s.pending_count }}</strong> • Delivered: <strong style="color: #059669;">{{ s.delivered_count }}</strong></span>
-          <a href="{{ url_for('rider_dashboard', date=selected_date, slot=s.slot_id) }}" class="btn btn-outline" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">
-            View Orders
-          </a>
-        </div>
+<!-- Slot Capacity Rows -->
+<div class="space-y-3.5">
+  {% for s in slots %}
+  {% set pct = ((s.booked_count / s.capacity) * 100) | round | int if s.capacity else 0 %}
+  <div
+    class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs transition hover:border-zinc-300"
+    style="animation-delay: {{ loop.index0 * 45 }}ms;"
+  >
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="text-lg font-semibold text-zinc-950">{{ s.label }}</span>
+        <span class="rounded-full border px-3 py-0.5 text-xs font-semibold {% if s.status == 'COMPLETED' %}border-emerald-200 bg-emerald-50 text-emerald-700{% elif s.status == 'FULL' %}border-rose-200 bg-rose-50 text-rose-700{% elif s.status == 'CLOSED' %}border-zinc-200 bg-zinc-100 text-zinc-600{% else %}border-sky-200 bg-sky-50 text-sky-700{% endif %}">
+          {{ s.status }}
+        </span>
       </div>
 
-      <div class="progress-track">
-        <div
-          class="progress-fill {% if s.status == 'FULL' %}full{% elif s.status == 'COMPLETED' %}completed{% endif %}"
-          style="width: {{ pct }}%;"
-        ></div>
+      <div class="flex flex-wrap items-center gap-4 text-base">
+        <span class="font-bold text-zinc-950">
+          {{ s.booked_count }} <span class="font-normal text-zinc-400">/ {{ s.capacity }}</span>
+        </span>
+        <span class="text-sm font-medium text-zinc-500">{{ s.total_containers }} jugs</span>
+        <span class="text-sm font-semibold text-emerald-600">{{ s.delivered_count }} done</span>
+        <a
+          href="{{ url_for('rider_dashboard', date=selected_date, slot=s.slot_id) }}"
+          class="inline-flex h-9 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-50 active:scale-95"
+        >
+          <span>Orders</span>
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+          </svg>
+        </a>
       </div>
     </div>
-    {% endfor %}
+
+    <div class="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-zinc-100">
+      <div
+        class="progress-bar-fill h-full rounded-full {% if s.status == 'FULL' %}bg-rose-500{% elif s.status == 'COMPLETED' %}bg-emerald-500{% elif s.remaining <= 3 and s.status == 'OPEN' %}bg-amber-500{% else %}bg-sky-600{% endif %}"
+        style="width: {{ pct }}%;"
+      ></div>
+    </div>
   </div>
+  {% endfor %}
 </div>
 {% endblock %}

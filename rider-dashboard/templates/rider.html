@@ -1,122 +1,154 @@
 {% extends "base.html" %}
-{% block title %}Rider Delivery List — AquaDash{% endblock %}
+{% block title %}Deliveries — AquaDash Rider{% endblock %}
 
 {% block content %}
-<div class="card">
-  <div class="controls-bar">
-    <div>
-      <h1 style="margin: 0; font-size: 1.35rem;">Delivery Rider Orders</h1>
-      <p style="margin: 0.2rem 0 0; color: #64748b; font-size: 0.875rem;">
-        Showing current / selected time slot orders with private subdivision home addresses.
-      </p>
-    </div>
-
-    <form method="get" action="{{ url_for('rider_dashboard') }}" class="controls-form">
-      <div>
-        <label for="date" style="display: block; font-size: 0.75rem; font-weight: 600; color: #64748b;">Date (PHT)</label>
-        <input id="date" name="date" type="date" value="{{ selected_date }}" class="input" style="width: auto; padding: 0.42rem 0.65rem;" />
-      </div>
-      <input type="hidden" name="slot" value="{{ selected_slot }}" />
-      <button type="submit" class="btn btn-outline">Load Date</button>
-    </form>
+<!-- Top Header + Date Picker -->
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight text-zinc-950">Deliveries</h1>
+    <p class="mt-1 text-base text-zinc-500">
+      {% if slot_info %}{{ slot_info.label }} · {{ selected_date }}{% else %}{{ selected_date }}{% endif %}
+    </p>
   </div>
 
-  {% if slots %}
-  <div class="slot-pills">
-    {% for s in slots %}
-      <a
-        href="{{ url_for('rider_dashboard', date=selected_date, slot=s.slot_id) }}"
-        class="slot-pill {% if s.slot_id == selected_slot %}active{% endif %}"
-      >
-        <span>{{ s.label }}</span>
-        <span>({{ s.booked_count }}/{{ s.capacity }})</span>
-      </a>
-    {% endfor %}
-  </div>
-  {% endif %}
+  <form method="get" action="{{ url_for('rider_dashboard') }}" class="flex items-center gap-2">
+    <input type="hidden" name="slot" value="{{ selected_slot }}" />
+    <input
+      id="date"
+      name="date"
+      type="date"
+      value="{{ selected_date }}"
+      onchange="this.form.submit()"
+      class="h-11 rounded-xl border border-zinc-200 bg-white px-3.5 text-base font-semibold text-zinc-950 shadow-2xs transition focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 focus:outline-none cursor-pointer"
+    />
+    <a
+      href="{{ url_for('rider_dashboard', date=selected_date, slot=selected_slot) }}"
+      class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-2xs transition hover:bg-zinc-50 active:scale-95"
+      title="Refresh orders"
+    >
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+      </svg>
+    </a>
+  </form>
 </div>
+
+<!-- Slot Switcher Pills -->
+{% if slots %}
+<div class="flex flex-wrap gap-2">
+  {% for s in slots %}
+    <a
+      href="{{ url_for('rider_dashboard', date=selected_date, slot=s.slot_id) }}"
+      class="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-150 {% if s.slot_id == selected_slot %}border-zinc-950 bg-zinc-950 text-white shadow-sm{% else %}border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:text-zinc-950{% endif %}"
+    >
+      <span>{{ s.label }}</span>
+      <span class="rounded-full px-2 py-0.5 text-xs font-bold {% if s.slot_id == selected_slot %}bg-white/20 text-white{% else %}bg-zinc-100 text-zinc-600{% endif %}">
+        {{ s.booked_count }}/{{ s.capacity }}
+      </span>
+    </a>
+  {% endfor %}
+</div>
+{% endif %}
 
 {% if error_message %}
-  <div class="alert alert-error">{{ error_message }}</div>
+  <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-base font-medium text-rose-700">
+    {{ error_message }}
+  </div>
 {% endif %}
 
+<!-- 3 Crisp Summary Stats -->
 {% if slot_info %}
-<div class="kpi-grid">
-  <div class="kpi-card">
-    <div class="kpi-label">Selected Slot</div>
-    <div style="font-size: 1.05rem; font-weight: 700; margin-top: 0.25rem;">{{ slot_info.label }}</div>
-    <div style="margin-top: 0.3rem;">
-      <span class="badge badge-{{ slot_info.status|lower }}">{{ slot_info.status }}</span>
+<div class="grid gap-4 sm:grid-cols-3">
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs">
+    <div class="text-sm font-medium text-zinc-500">Pending Stops</div>
+    <div class="mt-1.5 text-3xl font-bold tracking-tight text-amber-600">{{ slot_info.pending_count }}</div>
+  </div>
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 45ms;">
+    <div class="text-sm font-medium text-zinc-500">Delivered</div>
+    <div class="mt-1.5 flex items-baseline gap-2">
+      <span class="text-3xl font-bold tracking-tight text-emerald-600">{{ slot_info.delivered_count }}</span>
+      <span class="text-base font-medium text-zinc-400">/ {{ slot_info.booked_count }}</span>
     </div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Orders Booked</div>
-    <div class="kpi-value">{{ slot_info.booked_count }} <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">/ {{ slot_info.capacity }}</span></div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Pending / Delivered</div>
-    <div class="kpi-value">
-      <span style="color: #d97706;">{{ slot_info.pending_count }}</span>
-      <span style="font-size: 1rem; color: #94a3b8;">/</span>
-      <span style="color: #059669;">{{ slot_info.delivered_count }}</span>
-    </div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">5-Gal Jugs to Load</div>
-    <div class="kpi-value" style="color: #0284c7;">{{ slot_info.total_containers }}</div>
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 90ms;">
+    <div class="text-sm font-medium text-zinc-500">5-Gallon Jugs</div>
+    <div class="mt-1.5 text-3xl font-bold tracking-tight text-sky-700">{{ slot_info.total_containers }}</div>
   </div>
 </div>
 {% endif %}
 
-<div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem;">
-    <h2 style="margin: 0; font-size: 1.05rem;">Household Deliveries ({{ orders|length }})</h2>
-    <a href="{{ url_for('rider_dashboard', date=selected_date, slot=selected_slot) }}" class="btn btn-outline">Refresh</a>
-  </div>
-
-  {% if orders %}
-  <div class="order-list">
-    {% for order in orders %}
-    <div class="order-card {% if order.status == 'DELIVERED' %}delivered{% endif %}">
-      <div>
-        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-          <span class="badge badge-{{ order.status|lower }}">{{ order.status }}</span>
-          <strong style="font-size: 0.95rem;">{{ order.customer_name }}</strong>
-          <span style="font-size: 0.8rem; color: #64748b;">#{{ order.order_id }}</span>
-        </div>
-
-        <div class="order-address">📍 {{ order.address }}</div>
-
-        <div class="order-meta">
-          <strong>{{ order.quantity }}</strong> × 5-gallon {{ 'container' if order.quantity == 1 else 'containers' }}
-          &nbsp;•&nbsp; 📞 {{ order.phone }}
-          {% if order.notes %}
-            &nbsp;•&nbsp; 📝 {{ order.notes }}
-          {% endif %}
-        </div>
+<!-- Order Cards -->
+{% if orders %}
+<div class="space-y-3.5">
+  {% for order in orders %}
+  <div
+    class="animate-fade-up flex flex-col justify-between gap-4 rounded-2xl border p-5 transition-all duration-200 sm:flex-row sm:items-center sm:p-6 {% if order.status == 'DELIVERED' %}border-zinc-200/60 bg-zinc-100/70 opacity-75{% else %}border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md{% endif %}"
+    style="animation-delay: {{ loop.index0 * 40 }}ms;"
+  >
+    <div class="min-w-0 space-y-2">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <span class="inline-flex items-center rounded-full border border-sky-200/80 bg-sky-50 px-3 py-1 text-sm font-bold text-sky-700">
+          {{ order.quantity }} {{ 'Jug' if order.quantity == 1 else 'Jugs' }}
+        </span>
+        <span class="text-base font-semibold text-zinc-900">{{ order.customer_name }}</span>
+        <span class="font-mono text-xs text-zinc-400">#{{ order.order_id }}</span>
       </div>
 
-      <div>
-        {% if order.status == 'PENDING' %}
-        <form method="post" action="{{ url_for('mark_delivered') }}" style="margin: 0">
-          <input type="hidden" name="date" value="{{ order.date }}" />
-          <input type="hidden" name="slot_id" value="{{ order.slot_id }}" />
-          <input type="hidden" name="order_id" value="{{ order.order_id }}" />
-          <button type="submit" class="btn btn-success">✓ Mark Delivered</button>
-        </form>
-        {% else %}
-        <div style="text-align: right; font-size: 0.82rem; color: #059669; font-weight: 600;">
-          Delivered ✓
-        </div>
+      <div class="flex items-start gap-2 text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
+        <svg class="mt-1 h-5 w-5 shrink-0 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        <span>{{ order.address }}</span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 text-base text-zinc-600">
+        <a href="tel:{{ order.phone }}" class="inline-flex items-center gap-1.5 font-medium text-sky-700 hover:underline">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <span>{{ order.phone }}</span>
+        </a>
+
+        {% if order.notes %}
+        <span class="rounded-lg bg-zinc-100 px-2.5 py-0.5 text-sm font-medium text-zinc-700">
+          {{ order.notes }}
+        </span>
         {% endif %}
       </div>
     </div>
-    {% endfor %}
+
+    <div class="shrink-0">
+      {% if order.status == 'PENDING' %}
+      <form method="post" action="{{ url_for('mark_delivered') }}" class="m-0">
+        <input type="hidden" name="date" value="{{ order.date }}" />
+        <input type="hidden" name="slot_id" value="{{ order.slot_id }}" />
+        <input type="hidden" name="order_id" value="{{ order.order_id }}" />
+        <button
+          type="submit"
+          class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 text-base font-semibold text-white shadow-xs transition hover:bg-emerald-700 active:scale-[0.98] sm:w-auto cursor-pointer"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
+          <span>Mark Delivered</span>
+        </button>
+      </form>
+      {% else %}
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6 9 17l-5-5"/>
+        </svg>
+        <span>Delivered</span>
+      </span>
+      {% endif %}
+    </div>
   </div>
-  {% else %}
-  <div class="empty-state">
-    No orders booked for <strong>{{ selected_date }}</strong> ({{ selected_slot }}) yet.
-  </div>
-  {% endif %}
+  {% endfor %}
 </div>
+{% else %}
+<div class="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-14 text-center">
+  <p class="text-lg font-semibold text-zinc-900">No deliveries in this slot</p>
+  <p class="mt-1 text-base text-zinc-500">{{ selected_date }} · {{ selected_slot }}</p>
+</div>
+{% endif %}
 {% endblock %}
