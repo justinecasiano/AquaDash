@@ -1,5 +1,9 @@
 <script setup>
 import { computed } from 'vue'
+import { CheckCircle2, Droplets, Package } from 'lucide-vue-next'
+import Badge from '@/components/ui/Badge.vue'
+import Card from '@/components/ui/Card.vue'
+import Progress from '@/components/ui/Progress.vue'
 
 const props = defineProps({
   selectedDate: {
@@ -30,17 +34,11 @@ function fillPct(slot) {
   return Math.min(100, Math.round((slot.booked_count / slot.capacity) * 100))
 }
 
-function statusPill(status) {
-  switch (status) {
-    case 'COMPLETED':
-      return 'bg-emerald-100 text-emerald-800'
-    case 'FULL':
-      return 'bg-rose-100 text-rose-700'
-    case 'CLOSED':
-      return 'bg-slate-200 text-slate-700'
-    default:
-      return 'bg-sky-100 text-sky-800'
-  }
+function badgeVariant(status) {
+  if (status === 'COMPLETED') return 'success'
+  if (status === 'FULL') return 'destructive'
+  if (status === 'CLOSED') return 'secondary'
+  return 'primary'
 }
 
 function barClass(slot) {
@@ -52,89 +50,80 @@ function barClass(slot) {
 </script>
 
 <template>
-  <section class="space-y-5">
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 class="text-lg font-semibold text-slate-900">Owner Slot Capacity Monitor</h2>
-          <p class="text-sm text-slate-500">
-            Live slot fullness for <span class="font-medium text-slate-700">{{ selectedDate }}</span> (aggregate counts only — zero private home addresses).
-          </p>
+  <section class="space-y-6">
+    <!-- Top 3 Big Stat Cards -->
+    <div class="grid gap-4 sm:grid-cols-3">
+      <Card class="animate-fade-up p-5">
+        <div class="flex items-center justify-between text-zinc-500">
+          <span class="text-sm font-medium">Booked Today</span>
+          <Package class="h-5 w-5 text-zinc-400" />
         </div>
-        <span v-if="loading" class="text-xs font-medium text-sky-600">Refreshing...</span>
-      </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span class="text-3xl font-bold tracking-tight text-zinc-950">{{ totals.booked }}</span>
+          <span class="text-base font-medium text-zinc-400">/ {{ totals.capacity }}</span>
+          <span class="ml-auto text-sm font-semibold text-sky-700">{{ totals.pct }}%</span>
+        </div>
+      </Card>
 
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Slots Booked</p>
-          <p class="mt-1 text-2xl font-bold text-slate-900">
-            {{ totals.booked }} <span class="text-sm font-normal text-slate-500">/ {{ totals.capacity }}</span>
-          </p>
-          <p class="mt-0.5 text-xs text-slate-500">{{ totals.pct }}% of daily capacity</p>
+      <Card class="animate-fade-up p-5" style="animation-delay: 50ms">
+        <div class="flex items-center justify-between text-zinc-500">
+          <span class="text-sm font-medium">5-Gallon Jugs</span>
+          <Droplets class="h-5 w-5 text-sky-500" />
         </div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span class="text-3xl font-bold tracking-tight text-sky-700">{{ totals.containers }}</span>
+          <span class="text-sm font-medium text-zinc-400">containers</span>
+        </div>
+      </Card>
 
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">5-Gallon Jugs</p>
-          <p class="mt-1 text-2xl font-bold text-sky-700">{{ totals.containers }}</p>
-          <p class="mt-0.5 text-xs text-slate-500">Total containers to prepare</p>
+      <Card class="animate-fade-up p-5" style="animation-delay: 100ms">
+        <div class="flex items-center justify-between text-zinc-500">
+          <span class="text-sm font-medium">Delivered</span>
+          <CheckCircle2 class="h-5 w-5 text-emerald-500" />
         </div>
-
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Pending Deliveries</p>
-          <p class="mt-1 text-2xl font-bold text-amber-600">{{ totals.pending }}</p>
-          <p class="mt-0.5 text-xs text-slate-500">Awaiting rider completion</p>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span class="text-3xl font-bold tracking-tight text-emerald-600">{{ totals.delivered }}</span>
+          <span class="text-base font-medium text-zinc-400">/ {{ totals.booked }}</span>
+          <span v-if="totals.pending > 0" class="ml-auto text-sm font-medium text-amber-600">
+            {{ totals.pending }} pending
+          </span>
         </div>
-
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Delivered</p>
-          <p class="mt-1 text-2xl font-bold text-emerald-600">{{ totals.delivered }}</p>
-          <p class="mt-0.5 text-xs text-slate-500">Completed orders</p>
-        </div>
-      </div>
+      </Card>
     </div>
 
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 class="mb-4 text-base font-semibold text-slate-900">Capacity Breakdown by Time Slot</h3>
+    <!-- Clean Slot Capacity List -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold tracking-tight text-zinc-950">Slots · {{ selectedDate }}</h2>
+        <span class="text-sm text-zinc-500">Counts only · No addresses</span>
+      </div>
 
-      <div class="space-y-4">
-        <div
-          v-for="slot in slots"
+      <div class="space-y-3">
+        <Card
+          v-for="(slot, idx) in slots"
           :key="slot.slot_id"
-          class="rounded-xl border border-slate-200 p-4"
+          class="animate-fade-up p-5"
+          :style="{ animationDelay: `${idx * 45}ms` }"
         >
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5">
-              <span class="font-semibold text-slate-900">{{ slot.label }}</span>
-              <span
-                class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                :class="statusPill(slot.status)"
-              >
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="text-lg font-semibold text-zinc-950">{{ slot.label }}</span>
+              <Badge :variant="badgeVariant(slot.status)" :dot="slot.status === 'OPEN'">
                 {{ slot.status }}
-              </span>
+              </Badge>
             </div>
 
-            <div class="flex flex-wrap items-center gap-4 text-xs text-slate-600">
-              <span>
-                <strong class="text-slate-900">{{ slot.booked_count }} / {{ slot.capacity }}</strong> orders ({{ fillPct(slot) }}%)
+            <div class="flex items-center gap-4 text-base">
+              <span class="font-bold text-zinc-950">
+                {{ slot.booked_count }} <span class="font-normal text-zinc-400">/ {{ slot.capacity }}</span>
               </span>
-              <span>
-                <strong class="text-slate-900">{{ slot.total_containers }}</strong> jugs
-              </span>
-              <span>
-                Pending: <strong class="text-amber-700">{{ slot.pending_count }}</strong> •
-                Delivered: <strong class="text-emerald-700">{{ slot.delivered_count }}</strong>
-              </span>
+              <span class="text-sm font-medium text-zinc-500">{{ slot.total_containers }} jugs</span>
+              <span class="text-sm font-semibold text-emerald-600">{{ slot.delivered_count }} done</span>
             </div>
           </div>
 
-          <div class="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              class="h-full rounded-full transition-all duration-300"
-              :class="barClass(slot)"
-              :style="{ width: `${fillPct(slot)}%` }"
-            ></div>
-          </div>
-        </div>
+          <Progress :value="fillPct(slot)" :bar-class="barClass(slot)" class="mt-3.5 h-2.5" />
+        </Card>
       </div>
     </div>
   </section>

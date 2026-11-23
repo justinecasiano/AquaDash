@@ -1,5 +1,10 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
+import { ArrowRight, Loader2, Lock, Minus, Plus } from 'lucide-vue-next'
+import Badge from '@/components/ui/Badge.vue'
+import Button from '@/components/ui/Button.vue'
+import Card from '@/components/ui/Card.vue'
+import Input from '@/components/ui/Input.vue'
 
 const props = defineProps({
   selectedDate: {
@@ -22,6 +27,8 @@ const props = defineProps({
 
 const emit = defineEmits(['submit'])
 
+const quickQuantities = [1, 2, 3, 5]
+
 function makeRequestId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID().replace(/-/g, '').slice(0, 20)
@@ -40,7 +47,6 @@ const form = reactive({
 const clientRequestId = ref(makeRequestId())
 const localError = ref('')
 
-// Fresh idempotency ID whenever the user changes slot/date after a conflict
 watch(
   () => [props.selectedDate, props.selectedSlot?.slot_id],
   () => {
@@ -60,19 +66,19 @@ function handleSubmit() {
   localError.value = ''
 
   if (!props.selectedSlot) {
-    localError.value = 'Please choose an open delivery time slot first.'
+    localError.value = 'Select an open time slot above first.'
     return
   }
   if (form.customer_name.trim().length < 2) {
-    localError.value = 'Please enter your name (at least 2 characters).'
+    localError.value = 'Enter your name (at least 2 characters).'
     return
   }
   if (form.address.trim().length < 5) {
-    localError.value = 'Please enter your subdivision home address (Block, Lot, Street).'
+    localError.value = 'Enter your subdivision address (Block, Lot, Street).'
     return
   }
   if (form.phone.trim().length < 7) {
-    localError.value = 'Please enter a valid mobile or landline number.'
+    localError.value = 'Enter a valid contact number.'
     return
   }
 
@@ -96,138 +102,159 @@ defineExpose({ regenerateRequestId })
 </script>
 
 <template>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <h2 class="text-lg font-semibold text-slate-900">2. Enter Delivery Details</h2>
-        <p class="text-sm text-slate-500">Order 5-gallon purified water refill containers for your household.</p>
+  <section class="animate-fade-up space-y-4" style="animation-delay: 120ms">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white">
+          2
+        </span>
+        <h2 class="text-xl font-semibold tracking-tight text-zinc-950">Your Details</h2>
       </div>
-      <div
-        v-if="selectedSlot"
-        class="inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800"
-      >
-        <span>Selected:</span>
-        <span>{{ selectedDate }} • {{ selectedSlot.label }}</span>
-      </div>
+
+      <Badge v-if="selectedSlot" variant="primary">
+        {{ selectedDate }} · {{ selectedSlot.label }}
+      </Badge>
     </div>
 
-    <div
-      class="mb-5 flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50/70 px-3.5 py-2.5 text-xs text-sky-900"
-    >
-      <span class="mt-0.5 font-bold text-sky-700">Privacy:</span>
-      <p>
-        Your home address and contact number are private. They are sent over HTTPS and shown only to our authenticated delivery rider — never on public pages.
-      </p>
-    </div>
-
-    <div
-      v-if="localError || errorMessage"
-      class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
-    >
-      {{ localError || errorMessage }}
-    </div>
-
-    <form @submit.prevent="handleSubmit" class="space-y-4">
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label for="customer_name" class="mb-1 block text-sm font-medium text-slate-700">
-            Household / Customer Name <span class="text-rose-500">*</span>
-          </label>
-          <input
-            id="customer_name"
-            v-model="form.customer_name"
-            type="text"
-            maxlength="100"
-            required
-            placeholder="e.g., Maria Santos"
-            class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none"
-          />
+    <Card class="p-6 sm:p-7">
+      <Transition name="fade-slide">
+        <div
+          v-if="localError || errorMessage"
+          class="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-base font-medium text-rose-700"
+        >
+          {{ localError || errorMessage }}
         </div>
+      </Transition>
 
+      <form @submit.prevent="handleSubmit" class="space-y-5">
+        <!-- 5-Gallon Quantity Picker -->
         <div>
-          <label for="phone" class="mb-1 block text-sm font-medium text-slate-700">
-            Contact Number <span class="text-rose-500">*</span>
-          </label>
-          <input
-            id="phone"
-            v-model="form.phone"
-            type="tel"
-            maxlength="20"
-            required
-            placeholder="e.g., 0917 123 4567"
-            class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none"
-          />
-        </div>
-      </div>
+          <label class="mb-2 block text-base font-medium text-zinc-800">5-Gallon Jugs</label>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="inline-flex items-center rounded-xl border border-zinc-200 bg-zinc-50/60 p-1">
+              <button
+                type="button"
+                @click="adjustQty(-1)"
+                :disabled="form.quantity <= 1"
+                class="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-700 transition hover:bg-white hover:shadow-2xs active:scale-95 disabled:opacity-35 cursor-pointer"
+                aria-label="Decrease quantity"
+              >
+                <Minus class="h-4 w-4" />
+              </button>
+              <span class="min-w-[3.5rem] text-center text-xl font-bold text-zinc-950">
+                {{ form.quantity }}
+              </span>
+              <button
+                type="button"
+                @click="adjustQty(1)"
+                :disabled="form.quantity >= 20"
+                class="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-700 transition hover:bg-white hover:shadow-2xs active:scale-95 disabled:opacity-35 cursor-pointer"
+                aria-label="Increase quantity"
+              >
+                <Plus class="h-4 w-4" />
+              </button>
+            </div>
 
-      <div>
-        <label for="address" class="mb-1 block text-sm font-medium text-slate-700">
-          Subdivision Home Address (Private) <span class="text-rose-500">*</span>
-        </label>
-        <input
-          id="address"
-          v-model="form.address"
-          type="text"
-          maxlength="300"
-          required
-          placeholder="e.g., Blk 4 Lot 12 Sampaguita St, Phase 2"
-          class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none"
-        />
-      </div>
-
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">
-            5-Gallon Containers <span class="text-rose-500">*</span>
-          </label>
-          <div class="inline-flex items-center rounded-xl border border-slate-300 bg-white">
-            <button
-              type="button"
-              @click="adjustQty(-1)"
-              :disabled="form.quantity <= 1"
-              class="px-4 py-2 text-lg font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer rounded-l-xl"
-            >
-              −
-            </button>
-            <span class="min-w-[3.5rem] text-center text-base font-bold text-slate-900">
-              {{ form.quantity }}
-            </span>
-            <button
-              type="button"
-              @click="adjustQty(1)"
-              :disabled="form.quantity >= 20"
-              class="px-4 py-2 text-lg font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer rounded-r-xl"
-            >
-              +
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                v-for="q in quickQuantities"
+                :key="q"
+                type="button"
+                @click="form.quantity = q"
+                class="h-10 min-w-[2.75rem] rounded-xl border px-3 text-sm font-semibold transition active:scale-95 cursor-pointer"
+                :class="
+                  form.quantity === q
+                    ? 'border-sky-600 bg-sky-50 text-sky-700'
+                    : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-950'
+                "
+              >
+                {{ q }}
+              </button>
+            </div>
           </div>
-          <p class="mt-1 text-xs text-slate-500">1 to 20 containers per order.</p>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="customer_name" class="mb-2 block text-base font-medium text-zinc-800">
+              Name
+            </label>
+            <Input
+              id="customer_name"
+              v-model="form.customer_name"
+              type="text"
+              maxlength="100"
+              required
+              placeholder="Maria Santos"
+            />
+          </div>
+
+          <div>
+            <label for="phone" class="mb-2 block text-base font-medium text-zinc-800">
+              Mobile Number
+            </label>
+            <Input
+              id="phone"
+              v-model="form.phone"
+              type="tel"
+              maxlength="20"
+              required
+              placeholder="0917 123 4567"
+            />
+          </div>
         </div>
 
         <div>
-          <label for="notes" class="mb-1 block text-sm font-medium text-slate-700">
-            Delivery Notes (Optional)
+          <div class="mb-2 flex items-center justify-between gap-2">
+            <label for="address" class="text-base font-medium text-zinc-800">Home Address</label>
+            <span class="inline-flex items-center gap-1 text-xs font-medium text-zinc-500">
+              <Lock class="h-3.5 w-3.5 text-sky-600" />
+              Private · Rider only
+            </span>
+          </div>
+          <Input
+            id="address"
+            v-model="form.address"
+            type="text"
+            maxlength="300"
+            required
+            placeholder="Blk 4 Lot 12 Sampaguita St, Phase 2"
+          />
+        </div>
+
+        <div>
+          <label for="notes" class="mb-2 block text-base font-medium text-zinc-800">
+            Delivery Note <span class="font-normal text-zinc-400">(optional)</span>
           </label>
-          <input
+          <Input
             id="notes"
             v-model="form.notes"
             type="text"
             maxlength="250"
-            placeholder="e.g., Green gate, leave by garage"
-            class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none"
+            placeholder="Green gate, leave by garage"
           />
         </div>
-      </div>
 
-      <div class="pt-2">
-        <button
-          type="submit"
-          :disabled="submitting || !selectedSlot"
-          class="w-full rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto cursor-pointer"
-        >
-          {{ submitting ? 'Submitting Order...' : 'Place Water Refill Order' }}
-        </button>
-      </div>
-    </form>
+        <div class="pt-2">
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            :disabled="submitting || !selectedSlot"
+            class="w-full"
+          >
+            <Loader2 v-if="submitting" class="h-5 w-5 animate-spin" />
+            <span>
+              {{
+                submitting
+                  ? 'Placing Order...'
+                  : `Order ${form.quantity} ${form.quantity === 1 ? 'Jug' : 'Jugs'}`
+              }}
+            </span>
+            <ArrowRight v-if="!submitting" class="h-5 w-5" />
+          </Button>
+        </div>
+      </form>
+    </Card>
   </section>
 </template>

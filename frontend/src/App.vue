@@ -1,6 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { BarChart3, Calendar, Droplets, RefreshCw, ShoppingBag } from 'lucide-vue-next'
 import { ApiError, fetchSlots, submitOrder } from './api/client'
+import Button from './components/ui/Button.vue'
 import SlotGrid from './components/SlotGrid.vue'
 import OrderForm from './components/OrderForm.vue'
 import ReceiptCard from './components/ReceiptCard.vue'
@@ -36,7 +38,6 @@ async function loadSlots(dateOverride = '', isInitial = false) {
     const data = await fetchSlots(dateOverride)
     minDate.value = data.today
 
-    // On initial page open after 19:00 PHT, automatically show tomorrow's open slots
     if (isInitial && !dateOverride && data.all_today_closed && data.default_date !== data.date) {
       rolledToTomorrow.value = true
       selectedDate.value = data.default_date
@@ -50,14 +51,13 @@ async function loadSlots(dateOverride = '', isInitial = false) {
       slots.value = data.slots
     }
 
-    // Keep selected slot if still open, otherwise auto-pick first open slot
     const stillOpen = slots.value.find((s) => s.slot_id === selectedSlotId.value && s.status === 'OPEN')
     if (!stillOpen) {
       const firstOpen = slots.value.find((s) => s.status === 'OPEN')
       selectedSlotId.value = firstOpen ? firstOpen.slot_id : ''
     }
   } catch (err) {
-    loadError.value = err.message || 'Could not load time slots from the server.'
+    loadError.value = err.message || 'Unable to load time slots.'
   } finally {
     loading.value = false
   }
@@ -85,7 +85,7 @@ async function handleOrderSubmit(payload) {
       await loadSlots(selectedDate.value, false)
       orderFormRef.value?.regenerateRequestId()
     } else if (err instanceof ApiError && err.code === 'DUPLICATE_ORDER') {
-      submitError.value = 'This order was already submitted. Refreshing slot availability...'
+      submitError.value = 'This order was already submitted.'
       await loadSlots(selectedDate.value, false)
       orderFormRef.value?.regenerateRequestId()
     } else {
@@ -109,114 +109,146 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50">
-    <header class="border-b border-slate-200 bg-white">
-      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-4">
-        <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-lg font-bold text-white shadow-sm">
-            💧
+  <div class="min-h-screen bg-zinc-50">
+    <!-- Minimalist Glass Header -->
+    <header class="sticky top-0 z-20 border-b border-zinc-200/80 bg-white/85 backdrop-blur-md">
+      <div class="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-xs">
+            <Droplets class="h-5 w-5" />
           </div>
-          <div>
-            <h1 class="text-xl font-bold tracking-tight text-slate-900">AquaDash</h1>
-            <p class="text-xs text-slate-500">Subdivision 5-Gallon Water Refill Delivery</p>
-          </div>
+          <span class="text-xl font-bold tracking-tight text-zinc-950">AquaDash</span>
         </div>
 
-        <nav class="flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+        <!-- shadcn Segmented Tabs -->
+        <nav class="inline-flex items-center rounded-xl border border-zinc-200/80 bg-zinc-100/90 p-1">
           <button
             type="button"
             @click="setTab('order')"
-            class="rounded-lg px-3.5 py-1.5 text-sm font-semibold transition cursor-pointer"
-            :class="activeTab === 'order' ? 'bg-white text-sky-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+            class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 cursor-pointer"
+            :class="
+              activeTab === 'order'
+                ? 'bg-white text-zinc-950 shadow-xs'
+                : 'text-zinc-500 hover:text-zinc-900'
+            "
           >
-            Order Refill
+            <ShoppingBag class="h-4 w-4" />
+            <span>Order</span>
           </button>
           <button
             type="button"
             @click="setTab('capacity')"
-            class="rounded-lg px-3.5 py-1.5 text-sm font-semibold transition cursor-pointer"
-            :class="activeTab === 'capacity' ? 'bg-white text-sky-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+            class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 cursor-pointer"
+            :class="
+              activeTab === 'capacity'
+                ? 'bg-white text-zinc-950 shadow-xs'
+                : 'text-zinc-500 hover:text-zinc-900'
+            "
           >
-            Slot Capacity (Owner)
+            <BarChart3 class="h-4 w-4" />
+            <span>Capacity</span>
           </button>
         </nav>
       </div>
     </header>
 
-    <main class="mx-auto max-w-5xl space-y-5 px-4 py-6">
-      <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
-        <div class="flex flex-wrap items-center gap-3">
-          <label for="delivery-date" class="text-sm font-medium text-slate-700">Delivery Date (PHT):</label>
-          <input
-            id="delivery-date"
-            type="date"
-            :value="selectedDate"
-            :min="activeTab === 'order' ? minDate : undefined"
-            @change="handleDateChange"
-            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-900 focus:border-sky-500 focus:outline-none"
-          />
+    <main class="mx-auto max-w-4xl space-y-7 px-4 py-7 sm:px-6 sm:py-9">
+      <!-- Clean Hero + Compact Date Controls -->
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-zinc-950">
+            {{ activeTab === 'order' ? 'Water Refill Delivery' : 'Slot Capacity' }}
+          </h1>
+          <p class="mt-1 text-base text-zinc-500">
+            {{ activeTab === 'order' ? '5-gallon purified water delivered to your door.' : 'Live daily slot fullness overview.' }}
+          </p>
         </div>
 
-        <button
-          type="button"
-          @click="loadSlots(selectedDate, false)"
-          :disabled="loading"
-          class="rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+        <div class="flex items-center gap-2">
+          <label
+            for="delivery-date"
+            class="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-2xs transition focus-within:border-sky-500 focus-within:ring-3 focus-within:ring-sky-500/15"
+          >
+            <Calendar class="h-4 w-4 text-zinc-400" />
+            <input
+              id="delivery-date"
+              type="date"
+              :value="selectedDate"
+              :min="activeTab === 'order' ? minDate : undefined"
+              @change="handleDateChange"
+              class="bg-transparent text-base font-semibold text-zinc-950 focus:outline-none cursor-pointer"
+            />
+          </label>
+
+          <Button
+            variant="outline"
+            size="icon"
+            class="h-11 w-11"
+            :disabled="loading"
+            @click="loadSlots(selectedDate, false)"
+            aria-label="Refresh slots"
+          >
+            <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
+          </Button>
+        </div>
+      </div>
+
+      <Transition name="fade-slide">
+        <div
+          v-if="rolledToTomorrow && activeTab === 'order'"
+          class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-base font-medium text-sky-900"
         >
-          {{ loading ? 'Refreshing...' : 'Refresh Slots' }}
-        </button>
-      </div>
+          Today's slots have ended — showing tomorrow ({{ selectedDate }}).
+        </div>
+      </Transition>
 
-      <div
-        v-if="rolledToTomorrow && activeTab === 'order'"
-        class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
-      >
-        Today's delivery windows have ended (past 7:00 PM PHT) — showing tomorrow's open slots ({{ selectedDate }}).
-      </div>
+      <Transition name="fade-slide">
+        <div
+          v-if="loadError"
+          class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-base font-medium text-rose-700"
+        >
+          {{ loadError }}
+        </div>
+      </Transition>
 
-      <div
-        v-if="loadError"
-        class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
-      >
-        {{ loadError }}
-      </div>
+      <Transition name="fade-slide" mode="out-in">
+        <div v-if="activeTab === 'order'" key="order-view" class="space-y-8">
+          <Transition name="fade-slide" mode="out-in">
+            <ReceiptCard
+              v-if="confirmedOrder"
+              key="receipt"
+              :order="confirmedOrder"
+              @new-order="handleNewOrder"
+            />
 
-      <template v-if="activeTab === 'order'">
-        <ReceiptCard
-          v-if="confirmedOrder"
-          :order="confirmedOrder"
-          @new-order="handleNewOrder"
+            <div v-else key="form" class="space-y-8">
+              <SlotGrid
+                :slots="slots"
+                :selected-slot-id="selectedSlotId"
+                :loading="loading"
+                @select="(id) => (selectedSlotId = id)"
+              />
+
+              <OrderForm
+                ref="orderFormRef"
+                :selected-date="selectedDate"
+                :selected-slot="selectedSlot"
+                :submitting="submitting"
+                :error-message="submitError"
+                @submit="handleOrderSubmit"
+              />
+            </div>
+          </Transition>
+        </div>
+
+        <OwnerCapacityView
+          v-else
+          key="capacity-view"
+          :selected-date="selectedDate"
+          :slots="slots"
+          :loading="loading"
         />
-
-        <template v-else>
-          <SlotGrid
-            :slots="slots"
-            :selected-slot-id="selectedSlotId"
-            :loading="loading"
-            @select="(id) => (selectedSlotId = id)"
-          />
-
-          <OrderForm
-            ref="orderFormRef"
-            :selected-date="selectedDate"
-            :selected-slot="selectedSlot"
-            :submitting="submitting"
-            :error-message="submitError"
-            @submit="handleOrderSubmit"
-          />
-        </template>
-      </template>
-
-      <OwnerCapacityView
-        v-else
-        :selected-date="selectedDate"
-        :slots="slots"
-        :loading="loading"
-      />
+      </Transition>
     </main>
-
-    <footer class="mx-auto max-w-5xl px-4 py-6 text-center text-xs text-slate-400">
-      AquaDash • Group bcsad-g02 • Case 9 Water Refilling Station Orders
-    </footer>
   </div>
 </template>
