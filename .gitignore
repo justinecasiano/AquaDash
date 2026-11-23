@@ -221,3 +221,23 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Build outputs and deploy zips
+dist/
+*.zip
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+.vite/
+
+# Local env files and SSH keys
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS files
+.DS_Store
+Thumbs.db
+
