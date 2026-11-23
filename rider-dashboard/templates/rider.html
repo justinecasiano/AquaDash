@@ -1,17 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Deliveries — AquaDash Rider{% endblock %}
+{% block title %}Deliveries — AquaDash{% endblock %}
 
 {% block content %}
-<!-- Top Header + Date Picker -->
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="text-3xl font-bold tracking-tight text-zinc-950">Deliveries</h1>
-    <p class="mt-1 text-base text-zinc-500">
-      {% if slot_info %}{{ slot_info.label }} · {{ selected_date }}{% else %}{{ selected_date }}{% endif %}
-    </p>
-  </div>
+<div class="flex flex-wrap items-center justify-between gap-3">
+  <h1 class="text-2xl font-bold tracking-tight text-zinc-950">Deliveries</h1>
 
-  <form method="get" action="{{ url_for('rider_dashboard') }}" class="flex items-center gap-2">
+  <form method="get" action="{{ url_for('rider_dashboard') }}" class="flex items-center gap-1.5">
     <input type="hidden" name="slot" value="{{ selected_slot }}" />
     <input
       id="date"
@@ -19,31 +13,31 @@
       type="date"
       value="{{ selected_date }}"
       onchange="this.form.submit()"
-      class="h-11 rounded-xl border border-zinc-200 bg-white px-3.5 text-base font-semibold text-zinc-950 shadow-2xs transition focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 focus:outline-none cursor-pointer"
+      class="h-9 rounded-xl border border-zinc-200 bg-white px-2.5 text-xs font-semibold text-zinc-900 shadow-2xs transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 focus:outline-none cursor-pointer"
     />
     <a
       href="{{ url_for('rider_dashboard', date=selected_date, slot=selected_slot) }}"
-      class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-2xs transition hover:bg-zinc-50 active:scale-95"
-      title="Refresh orders"
+      class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-2xs transition hover:bg-zinc-50 active:scale-95"
+      title="Refresh"
     >
-      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
       </svg>
     </a>
   </form>
 </div>
 
-<!-- Slot Switcher Pills -->
+<!-- Compact Slot Tabs -->
 {% if slots %}
-<div class="flex flex-wrap gap-2">
+<div class="flex flex-wrap gap-1.5">
   {% for s in slots %}
     <a
       href="{{ url_for('rider_dashboard', date=selected_date, slot=s.slot_id) }}"
-      class="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-150 {% if s.slot_id == selected_slot %}border-zinc-950 bg-zinc-950 text-white shadow-sm{% else %}border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:text-zinc-950{% endif %}"
+      class="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-150 {% if s.slot_id == selected_slot %}border-zinc-950 bg-zinc-950 text-white shadow-xs{% else %}border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-950{% endif %}"
     >
       <span>{{ s.label }}</span>
-      <span class="rounded-full px-2 py-0.5 text-xs font-bold {% if s.slot_id == selected_slot %}bg-white/20 text-white{% else %}bg-zinc-100 text-zinc-600{% endif %}">
-        {{ s.booked_count }}/{{ s.capacity }}
+      <span class="font-mono text-[11px] {% if s.slot_id == selected_slot %}text-zinc-300{% else %}text-zinc-400{% endif %}">
+        {{ s.booked_count }}
       </span>
     </a>
   {% endfor %}
@@ -51,70 +45,44 @@
 {% endif %}
 
 {% if error_message %}
-  <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-base font-medium text-rose-700">
+  <div class="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-medium text-rose-700">
     {{ error_message }}
   </div>
 {% endif %}
 
-<!-- 3 Crisp Summary Stats -->
+<!-- Compact Inline Summary Strip -->
 {% if slot_info %}
-<div class="grid gap-4 sm:grid-cols-3">
-  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs">
-    <div class="text-sm font-medium text-zinc-500">Pending Stops</div>
-    <div class="mt-1.5 text-3xl font-bold tracking-tight text-amber-600">{{ slot_info.pending_count }}</div>
-  </div>
-  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 45ms;">
-    <div class="text-sm font-medium text-zinc-500">Delivered</div>
-    <div class="mt-1.5 flex items-baseline gap-2">
-      <span class="text-3xl font-bold tracking-tight text-emerald-600">{{ slot_info.delivered_count }}</span>
-      <span class="text-base font-medium text-zinc-400">/ {{ slot_info.booked_count }}</span>
-    </div>
-  </div>
-  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 90ms;">
-    <div class="text-sm font-medium text-zinc-500">5-Gallon Jugs</div>
-    <div class="mt-1.5 text-3xl font-bold tracking-tight text-sky-700">{{ slot_info.total_containers }}</div>
-  </div>
+<div class="flex flex-wrap items-center gap-4 text-sm text-zinc-500">
+  <span><strong class="font-semibold text-amber-600">{{ slot_info.pending_count }}</strong> pending</span>
+  <span>·</span>
+  <span><strong class="font-semibold text-emerald-600">{{ slot_info.delivered_count }}</strong> delivered</span>
+  <span>·</span>
+  <span><strong class="font-semibold text-sky-700">{{ slot_info.total_containers }}</strong> jugs</span>
 </div>
 {% endif %}
 
-<!-- Order Cards -->
+<!-- Delivery Cards -->
 {% if orders %}
-<div class="space-y-3.5">
+<div class="space-y-2.5">
   {% for order in orders %}
   <div
-    class="animate-fade-up flex flex-col justify-between gap-4 rounded-2xl border p-5 transition-all duration-200 sm:flex-row sm:items-center sm:p-6 {% if order.status == 'DELIVERED' %}border-zinc-200/60 bg-zinc-100/70 opacity-75{% else %}border-zinc-200/90 bg-white shadow-xs hover:border-zinc-300 hover:shadow-md{% endif %}"
-    style="animation-delay: {{ loop.index0 * 40 }}ms;"
+    class="animate-fade-up flex flex-col justify-between gap-3.5 rounded-2xl border p-4 transition-all duration-150 sm:flex-row sm:items-center sm:px-5 {% if order.status == 'DELIVERED' %}border-zinc-200/60 bg-zinc-100/65 opacity-70{% else %}border-zinc-200/90 bg-white shadow-2xs hover:border-zinc-300 hover:shadow-sm{% endif %}"
+    style="animation-delay: {{ loop.index0 * 35 }}ms;"
   >
-    <div class="min-w-0 space-y-2">
-      <div class="flex flex-wrap items-center gap-2.5">
-        <span class="inline-flex items-center rounded-full border border-sky-200/80 bg-sky-50 px-3 py-1 text-sm font-bold text-sky-700">
-          {{ order.quantity }} {{ 'Jug' if order.quantity == 1 else 'Jugs' }}
+    <div class="min-w-0 space-y-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-bold text-sky-700">
+          {{ order.quantity }} {{ 'jug' if order.quantity == 1 else 'jugs' }}
         </span>
-        <span class="text-base font-semibold text-zinc-900">{{ order.customer_name }}</span>
-        <span class="font-mono text-xs text-zinc-400">#{{ order.order_id }}</span>
+        <span class="text-sm font-semibold text-zinc-700">{{ order.customer_name }}</span>
+        <a href="tel:{{ order.phone }}" class="text-sm font-medium text-sky-700 hover:underline">{{ order.phone }}</a>
       </div>
 
-      <div class="flex items-start gap-2 text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
-        <svg class="mt-1 h-5 w-5 shrink-0 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
-        </svg>
-        <span>{{ order.address }}</span>
-      </div>
+      <p class="text-[17px] font-bold tracking-tight text-zinc-950">{{ order.address }}</p>
 
-      <div class="flex flex-wrap items-center gap-3 text-base text-zinc-600">
-        <a href="tel:{{ order.phone }}" class="inline-flex items-center gap-1.5 font-medium text-sky-700 hover:underline">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-          </svg>
-          <span>{{ order.phone }}</span>
-        </a>
-
-        {% if order.notes %}
-        <span class="rounded-lg bg-zinc-100 px-2.5 py-0.5 text-sm font-medium text-zinc-700">
-          {{ order.notes }}
-        </span>
-        {% endif %}
-      </div>
+      {% if order.notes %}
+      <p class="text-xs font-medium text-zinc-500">{{ order.notes }}</p>
+      {% endif %}
     </div>
 
     <div class="shrink-0">
@@ -125,20 +93,17 @@
         <input type="hidden" name="order_id" value="{{ order.order_id }}" />
         <button
           type="submit"
-          class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 text-base font-semibold text-white shadow-xs transition hover:bg-emerald-700 active:scale-[0.98] sm:w-auto cursor-pointer"
+          class="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-xs transition hover:bg-emerald-700 active:scale-[0.98] sm:w-auto cursor-pointer"
         >
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 6 9 17l-5-5"/>
           </svg>
-          <span>Mark Delivered</span>
+          <span>Deliver</span>
         </button>
       </form>
       {% else %}
-      <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 6 9 17l-5-5"/>
-        </svg>
-        <span>Delivered</span>
+      <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+        ✓ Delivered
       </span>
       {% endif %}
     </div>
@@ -146,9 +111,8 @@
   {% endfor %}
 </div>
 {% else %}
-<div class="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-14 text-center">
-  <p class="text-lg font-semibold text-zinc-900">No deliveries in this slot</p>
-  <p class="mt-1 text-base text-zinc-500">{{ selected_date }} · {{ selected_slot }}</p>
+<div class="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center">
+  <p class="text-sm font-semibold text-zinc-700">No orders in this slot</p>
 </div>
 {% endif %}
 {% endblock %}

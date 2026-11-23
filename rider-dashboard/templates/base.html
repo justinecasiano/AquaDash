@@ -7,42 +7,37 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   </head>
   <body class="min-h-screen bg-zinc-50 text-zinc-950 antialiased selection:bg-sky-100 selection:text-sky-900">
-    <header class="sticky top-0 z-20 border-b border-zinc-200/80 bg-white/85 backdrop-blur-md">
-      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
-        <a href="{{ url_for('index') }}" class="flex items-center gap-2.5 text-zinc-950 no-underline">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-xs">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <header class="sticky top-0 z-20 border-b border-zinc-200/70 bg-white/85 backdrop-blur-md">
+      <div class="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
+        <a href="{{ url_for('index') }}" class="flex items-center gap-2 text-zinc-950 no-underline">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-600 text-white">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
               <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
             </svg>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-xl font-bold tracking-tight">AquaDash</span>
-            <span class="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-600">
-              Staff
-            </span>
-          </div>
+          <span class="text-base font-bold tracking-tight">AquaDash</span>
         </a>
 
         {% if session.get('role') %}
-        <div class="flex items-center gap-2.5">
-          <nav class="inline-flex items-center rounded-xl border border-zinc-200/80 bg-zinc-100/90 p-1">
+        <div class="flex items-center gap-2">
+          <nav class="inline-flex items-center rounded-lg border border-zinc-200/80 bg-zinc-100/90 p-0.5">
             <a
               href="{{ url_for('rider_dashboard') }}"
-              class="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 {% if request.endpoint == 'rider_dashboard' %}bg-white text-zinc-950 shadow-xs{% else %}text-zinc-500 hover:text-zinc-900{% endif %}"
+              class="rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 {% if request.endpoint == 'rider_dashboard' %}bg-white text-zinc-950 shadow-2xs{% else %}text-zinc-500 hover:text-zinc-900{% endif %}"
             >
               Deliveries
             </a>
             <a
               href="{{ url_for('owner_dashboard') }}"
-              class="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 {% if request.endpoint == 'owner_dashboard' %}bg-white text-zinc-950 shadow-xs{% else %}text-zinc-500 hover:text-zinc-900{% endif %}"
+              class="rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 {% if request.endpoint == 'owner_dashboard' %}bg-white text-zinc-950 shadow-2xs{% else %}text-zinc-500 hover:text-zinc-900{% endif %}"
             >
               Capacity
             </a>
@@ -51,9 +46,9 @@
           <form method="post" action="{{ url_for('logout') }}" class="m-0">
             <button
               type="submit"
-              class="inline-flex h-10 items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 shadow-2xs transition hover:bg-zinc-50 hover:text-zinc-950 active:scale-[0.98] cursor-pointer"
+              class="inline-flex h-8 items-center rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-semibold text-zinc-600 shadow-2xs transition hover:bg-zinc-50 hover:text-zinc-950 active:scale-[0.98] cursor-pointer"
             >
-              Sign Out
+              Sign out
             </button>
           </form>
         </div>
@@ -61,15 +56,15 @@
       </div>
     </header>
 
-    <main class="mx-auto max-w-5xl space-y-6 px-4 py-7 sm:px-6 sm:py-9">
+    <main class="mx-auto max-w-3xl space-y-5 px-4 py-7 sm:py-9">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <div class="space-y-2.5">
+          <div class="space-y-2">
             {% for category, message in messages %}
               <div
-                class="animate-fade-up flex items-center gap-2.5 rounded-xl border px-4 py-3 text-base font-medium {% if category == 'success' %}border-emerald-200 bg-emerald-50 text-emerald-800{% elif category == 'error' %}border-rose-200 bg-rose-50 text-rose-700{% else %}border-sky-200 bg-sky-50 text-sky-900{% endif %}"
+                class="animate-fade-up rounded-xl border px-3.5 py-2.5 text-sm font-medium {% if category == 'success' %}border-emerald-200 bg-emerald-50 text-emerald-800{% elif category == 'error' %}border-rose-200 bg-rose-50 text-rose-700{% else %}border-sky-200 bg-sky-50 text-sky-900{% endif %}"
               >
-                <span>{{ message }}</span>
+                {{ message }}
               </div>
             {% endfor %}
           </div>

@@ -1,96 +1,81 @@
 {% extends "base.html" %}
-{% block title %}Owner Capacity — AquaDash{% endblock %}
+{% block title %}Owner Slot Fullness Overview — AquaDash{% endblock %}
 
 {% block content %}
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="text-3xl font-bold tracking-tight text-zinc-950">Owner Slot Fullness Overview</h1>
-    <p class="mt-1 text-base text-zinc-500">{{ selected_date }} · Max 15 orders per slot</p>
-  </div>
+<div class="flex flex-wrap items-center justify-between gap-3">
+  <h1 class="text-2xl font-bold tracking-tight text-zinc-950">Slot Capacity</h1>
 
-  <form method="get" action="{{ url_for('owner_dashboard') }}" class="flex items-center gap-2">
+  <form method="get" action="{{ url_for('owner_dashboard') }}" class="m-0">
     <input
       id="date"
       name="date"
       type="date"
       value="{{ selected_date }}"
       onchange="this.form.submit()"
-      class="h-11 rounded-xl border border-zinc-200 bg-white px-3.5 text-base font-semibold text-zinc-950 shadow-2xs transition focus:border-sky-500 focus:ring-3 focus:ring-sky-500/15 focus:outline-none cursor-pointer"
+      class="h-9 rounded-xl border border-zinc-200 bg-white px-2.5 text-xs font-semibold text-zinc-900 shadow-2xs transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 focus:outline-none cursor-pointer"
     />
   </form>
 </div>
 
 {% if error_message %}
-  <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-base font-medium text-rose-700">
+  <div class="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-medium text-rose-700">
     {{ error_message }}
   </div>
 {% endif %}
 
-<!-- 4 Clean KPI Tiles -->
-<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs">
-    <div class="text-sm font-medium text-zinc-500">Booked</div>
-    <div class="mt-1.5 flex items-baseline gap-1.5">
-      <span class="text-3xl font-bold tracking-tight text-zinc-950">{{ totals.booked }}</span>
-      <span class="text-base font-medium text-zinc-400">/ {{ totals.capacity }}</span>
-      <span class="ml-auto text-sm font-semibold text-sky-700">{{ totals.utilization_pct }}%</span>
+<!-- Minimal 3-Metric Strip -->
+<div class="grid grid-cols-3 gap-2.5">
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-2xs">
+    <div class="text-xs font-medium text-zinc-500">Booked</div>
+    <div class="mt-1 flex items-baseline gap-1">
+      <span class="text-2xl font-bold tracking-tight text-zinc-950">{{ totals.booked }}</span>
+      <span class="font-mono text-xs text-zinc-400">/{{ totals.capacity }}</span>
     </div>
   </div>
 
-  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 45ms;">
-    <div class="text-sm font-medium text-zinc-500">5-Gallon Jugs</div>
-    <div class="mt-1.5 text-3xl font-bold tracking-tight text-sky-700">{{ totals.containers }}</div>
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-2xs" style="animation-delay: 40ms;">
+    <div class="text-xs font-medium text-zinc-500">Jugs</div>
+    <div class="mt-1 text-2xl font-bold tracking-tight text-sky-700">{{ totals.containers }}</div>
   </div>
 
-  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 90ms;">
-    <div class="text-sm font-medium text-zinc-500">Pending</div>
-    <div class="mt-1.5 text-3xl font-bold tracking-tight text-amber-600">{{ totals.pending }}</div>
-  </div>
-
-  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs" style="animation-delay: 135ms;">
-    <div class="text-sm font-medium text-zinc-500">Delivered</div>
-    <div class="mt-1.5 flex items-baseline gap-1.5">
-      <span class="text-3xl font-bold tracking-tight text-emerald-600">{{ totals.delivered }}</span>
-      <span class="ml-auto text-sm font-semibold text-emerald-700">{{ totals.completion_pct }}%</span>
+  <div class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-2xs" style="animation-delay: 80ms;">
+    <div class="text-xs font-medium text-zinc-500">Delivered</div>
+    <div class="mt-1 flex items-baseline gap-1">
+      <span class="text-2xl font-bold tracking-tight text-emerald-600">{{ totals.delivered }}</span>
+      <span class="font-mono text-xs text-zinc-400">/{{ totals.booked }}</span>
     </div>
   </div>
 </div>
 
-<!-- Slot Capacity Rows -->
-<div class="space-y-3.5">
+<!-- Unified Minimalist Slot List -->
+<div class="divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-2xs">
   {% for s in slots %}
   {% set pct = ((s.booked_count / s.capacity) * 100) | round | int if s.capacity else 0 %}
-  <div
-    class="animate-fade-up rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs transition hover:border-zinc-300"
-    style="animation-delay: {{ loop.index0 * 45 }}ms;"
-  >
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <span class="text-lg font-semibold text-zinc-950">{{ s.label }}</span>
-        <span class="rounded-full border px-3 py-0.5 text-xs font-semibold {% if s.status == 'COMPLETED' %}border-emerald-200 bg-emerald-50 text-emerald-700{% elif s.status == 'FULL' %}border-rose-200 bg-rose-50 text-rose-700{% elif s.status == 'CLOSED' %}border-zinc-200 bg-zinc-100 text-zinc-600{% else %}border-sky-200 bg-sky-50 text-sky-700{% endif %}">
+  <div class="animate-fade-up px-4 py-4 sm:px-5" style="animation-delay: {{ loop.index0 * 40 }}ms;">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <span class="text-[15px] font-semibold text-zinc-950">{{ s.label }}</span>
+        <span class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold {% if s.status == 'COMPLETED' %}bg-emerald-50 text-emerald-700{% elif s.status == 'FULL' %}bg-rose-50 text-rose-700{% elif s.status == 'CLOSED' %}bg-zinc-100 text-zinc-500{% else %}bg-sky-50 text-sky-700{% endif %}">
           {{ s.status }}
         </span>
       </div>
 
-      <div class="flex flex-wrap items-center gap-4 text-base">
-        <span class="font-bold text-zinc-950">
-          {{ s.booked_count }} <span class="font-normal text-zinc-400">/ {{ s.capacity }}</span>
-        </span>
-        <span class="text-sm font-medium text-zinc-500">{{ s.total_containers }} jugs</span>
-        <span class="text-sm font-semibold text-emerald-600">{{ s.delivered_count }} done</span>
+      <div class="flex items-center gap-3">
+        <span class="font-mono text-sm font-semibold text-zinc-900">{{ s.booked_count }}/{{ s.capacity }}</span>
+        <span class="font-mono text-xs text-zinc-400">{{ s.total_containers }}j</span>
         <a
           href="{{ url_for('rider_dashboard', date=selected_date, slot=s.slot_id) }}"
-          class="inline-flex h-9 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-50 active:scale-95"
+          class="inline-flex h-8 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-950"
         >
-          <span>Orders</span>
-          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+          <span>View</span>
+          <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
           </svg>
         </a>
       </div>
     </div>
 
-    <div class="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-zinc-100">
+    <div class="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100">
       <div
         class="progress-bar-fill h-full rounded-full {% if s.status == 'FULL' %}bg-rose-500{% elif s.status == 'COMPLETED' %}bg-emerald-500{% elif s.remaining <= 3 and s.status == 'OPEN' %}bg-amber-500{% else %}bg-sky-600{% endif %}"
         style="width: {{ pct }}%;"
