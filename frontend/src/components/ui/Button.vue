@@ -26,23 +26,23 @@ const props = defineProps({
 })
 
 const variantClasses = {
-  default: 'bg-zinc-950 text-white shadow-xs hover:bg-zinc-800 focus-visible:ring-zinc-950/30',
-  primary: 'bg-sky-600 text-white shadow-xs hover:bg-sky-700 focus-visible:ring-sky-500/30',
-  secondary: 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200/80 focus-visible:ring-zinc-400/30',
-  outline: 'border border-zinc-200 bg-white text-zinc-900 shadow-2xs hover:bg-zinc-50 focus-visible:ring-zinc-400/30',
-  ghost: 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950',
+  default: 'bg-zinc-950 text-white shadow-xs hover:bg-zinc-800 focus-visible:ring-zinc-950/25',
+  primary: 'bg-sky-600 text-white shadow-xs hover:bg-sky-700 focus-visible:ring-sky-500/25',
+  secondary: 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200/80 focus-visible:ring-zinc-400/25',
+  outline: 'border border-zinc-200 bg-white text-zinc-800 shadow-2xs hover:bg-zinc-50 hover:text-zinc-950 focus-visible:ring-zinc-400/25',
+  ghost: 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950',
 }
 
 const sizeClasses = {
-  sm: 'h-9 rounded-lg px-3.5 text-sm',
-  default: 'h-11 rounded-xl px-5 text-base',
-  lg: 'h-12 rounded-xl px-6 text-base',
-  icon: 'h-10 w-10 rounded-xl',
+  sm: 'h-9 rounded-lg px-3 text-sm',
+  default: 'h-10 rounded-xl px-4 text-sm',
+  lg: 'h-11 rounded-xl px-5 text-[15px]',
+  icon: 'h-9 w-9 rounded-xl',
 }
 
 const classes = computed(() =>
   cn(
-    'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 cursor-pointer select-none active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 disabled:pointer-events-none disabled:opacity-45',
+    'inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 cursor-pointer select-none active:scale-[0.98] focus-visible:outline-none focus-visible:ring-3 disabled:pointer-events-none disabled:opacity-40',
     variantClasses[props.variant] || variantClasses.default,
     sizeClasses[props.size] || sizeClasses.default,
     props.class,

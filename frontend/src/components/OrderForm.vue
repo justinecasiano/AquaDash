@@ -1,7 +1,6 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
-import { ArrowRight, Loader2, Lock, Minus, Plus } from 'lucide-vue-next'
-import Badge from '@/components/ui/Badge.vue'
+import { ArrowLeft, ArrowRight, Loader2, Lock, Minus, Plus } from 'lucide-vue-next'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import Input from '@/components/ui/Input.vue'
@@ -25,7 +24,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit', 'back'])
 
 const quickQuantities = [1, 2, 3, 5]
 
@@ -66,19 +65,19 @@ function handleSubmit() {
   localError.value = ''
 
   if (!props.selectedSlot) {
-    localError.value = 'Select an open time slot above first.'
+    localError.value = 'Please select an open slot.'
     return
   }
   if (form.customer_name.trim().length < 2) {
-    localError.value = 'Enter your name (at least 2 characters).'
-    return
-  }
-  if (form.address.trim().length < 5) {
-    localError.value = 'Enter your subdivision address (Block, Lot, Street).'
+    localError.value = 'Enter your name.'
     return
   }
   if (form.phone.trim().length < 7) {
-    localError.value = 'Enter a valid contact number.'
+    localError.value = 'Enter a valid mobile number.'
+    return
+  }
+  if (form.address.trim().length < 5) {
+    localError.value = 'Enter your home address.'
     return
   }
 
@@ -102,83 +101,88 @@ defineExpose({ regenerateRequestId })
 </script>
 
 <template>
-  <section class="animate-fade-up space-y-4" style="animation-delay: 120ms">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2.5">
-        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white">
-          2
-        </span>
-        <h2 class="text-xl font-semibold tracking-tight text-zinc-950">Your Details</h2>
-      </div>
+  <section class="space-y-4">
+    <!-- Selected Slot Summary Pill + Back -->
+    <div class="flex items-center justify-between gap-2">
+      <button
+        type="button"
+        @click="emit('back')"
+        class="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-950 cursor-pointer"
+      >
+        <ArrowLeft class="h-4 w-4" />
+        <span>Change slot</span>
+      </button>
 
-      <Badge v-if="selectedSlot" variant="primary">
-        {{ selectedDate }} · {{ selectedSlot.label }}
-      </Badge>
+      <span
+        v-if="selectedSlot"
+        class="rounded-full border border-sky-200/80 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700"
+      >
+        {{ selectedSlot.label }}
+      </span>
     </div>
 
-    <Card class="p-6 sm:p-7">
+    <Card class="p-5 sm:p-6">
       <Transition name="fade-slide">
         <div
           v-if="localError || errorMessage"
-          class="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-base font-medium text-rose-700"
+          class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm font-medium text-rose-700"
         >
           {{ localError || errorMessage }}
         </div>
       </Transition>
 
-      <form @submit.prevent="handleSubmit" class="space-y-5">
-        <!-- 5-Gallon Quantity Picker -->
-        <div>
-          <label class="mb-2 block text-base font-medium text-zinc-800">5-Gallon Jugs</label>
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="inline-flex items-center rounded-xl border border-zinc-200 bg-zinc-50/60 p-1">
+      <form @submit.prevent="handleSubmit" class="space-y-4">
+        <!-- 5-Gallon Jugs -->
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 px-3.5 py-2.5">
+          <span class="text-sm font-semibold text-zinc-800">5-Gallon Jugs</span>
+
+          <div class="flex items-center gap-2">
+            <div class="hidden items-center gap-1 sm:flex">
+              <button
+                v-for="q in quickQuantities"
+                :key="q"
+                type="button"
+                @click="form.quantity = q"
+                class="h-8 w-8 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer"
+                :class="
+                  form.quantity === q
+                    ? 'bg-sky-600 text-white shadow-2xs'
+                    : 'bg-white text-zinc-600 border border-zinc-200 hover:text-zinc-950'
+                "
+              >
+                {{ q }}
+              </button>
+            </div>
+
+            <div class="inline-flex items-center rounded-lg border border-zinc-200 bg-white p-0.5">
               <button
                 type="button"
                 @click="adjustQty(-1)"
                 :disabled="form.quantity <= 1"
-                class="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-700 transition hover:bg-white hover:shadow-2xs active:scale-95 disabled:opacity-35 cursor-pointer"
-                aria-label="Decrease quantity"
+                class="flex h-8 w-8 items-center justify-center rounded-md text-zinc-700 transition hover:bg-zinc-100 active:scale-95 disabled:opacity-35 cursor-pointer"
+                aria-label="Decrease"
               >
-                <Minus class="h-4 w-4" />
+                <Minus class="h-3.5 w-3.5" />
               </button>
-              <span class="min-w-[3.5rem] text-center text-xl font-bold text-zinc-950">
+              <span class="min-w-[2.25rem] text-center text-sm font-bold text-zinc-950">
                 {{ form.quantity }}
               </span>
               <button
                 type="button"
                 @click="adjustQty(1)"
                 :disabled="form.quantity >= 20"
-                class="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-700 transition hover:bg-white hover:shadow-2xs active:scale-95 disabled:opacity-35 cursor-pointer"
-                aria-label="Increase quantity"
+                class="flex h-8 w-8 items-center justify-center rounded-md text-zinc-700 transition hover:bg-zinc-100 active:scale-95 disabled:opacity-35 cursor-pointer"
+                aria-label="Increase"
               >
-                <Plus class="h-4 w-4" />
-              </button>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button
-                v-for="q in quickQuantities"
-                :key="q"
-                type="button"
-                @click="form.quantity = q"
-                class="h-10 min-w-[2.75rem] rounded-xl border px-3 text-sm font-semibold transition active:scale-95 cursor-pointer"
-                :class="
-                  form.quantity === q
-                    ? 'border-sky-600 bg-sky-50 text-sky-700'
-                    : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-950'
-                "
-              >
-                {{ q }}
+                <Plus class="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
         </div>
 
-        <div class="grid gap-5 sm:grid-cols-2">
+        <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label for="customer_name" class="mb-2 block text-base font-medium text-zinc-800">
-              Name
-            </label>
+            <label for="customer_name" class="mb-1.5 block text-sm font-medium text-zinc-700">Name</label>
             <Input
               id="customer_name"
               v-model="form.customer_name"
@@ -190,9 +194,7 @@ defineExpose({ regenerateRequestId })
           </div>
 
           <div>
-            <label for="phone" class="mb-2 block text-base font-medium text-zinc-800">
-              Mobile Number
-            </label>
+            <label for="phone" class="mb-1.5 block text-sm font-medium text-zinc-700">Phone</label>
             <Input
               id="phone"
               v-model="form.phone"
@@ -205,11 +207,11 @@ defineExpose({ regenerateRequestId })
         </div>
 
         <div>
-          <div class="mb-2 flex items-center justify-between gap-2">
-            <label for="address" class="text-base font-medium text-zinc-800">Home Address</label>
-            <span class="inline-flex items-center gap-1 text-xs font-medium text-zinc-500">
-              <Lock class="h-3.5 w-3.5 text-sky-600" />
-              Private · Rider only
+          <div class="mb-1.5 flex items-center justify-between">
+            <label for="address" class="text-sm font-medium text-zinc-700">Address</label>
+            <span class="inline-flex items-center gap-1 text-xs font-medium text-zinc-400">
+              <Lock class="h-3 w-3 text-sky-600" />
+              Private
             </span>
           </div>
           <Input
@@ -223,8 +225,8 @@ defineExpose({ regenerateRequestId })
         </div>
 
         <div>
-          <label for="notes" class="mb-2 block text-base font-medium text-zinc-800">
-            Delivery Note <span class="font-normal text-zinc-400">(optional)</span>
+          <label for="notes" class="mb-1.5 block text-sm font-medium text-zinc-700">
+            Note <span class="font-normal text-zinc-400">(optional)</span>
           </label>
           <Input
             id="notes"
@@ -243,15 +245,15 @@ defineExpose({ regenerateRequestId })
             :disabled="submitting || !selectedSlot"
             class="w-full"
           >
-            <Loader2 v-if="submitting" class="h-5 w-5 animate-spin" />
+            <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
             <span>
               {{
                 submitting
                   ? 'Placing Order...'
-                  : `Order ${form.quantity} ${form.quantity === 1 ? 'Jug' : 'Jugs'}`
+                  : `Place Order · ${form.quantity} ${form.quantity === 1 ? 'Jug' : 'Jugs'}`
               }}
             </span>
-            <ArrowRight v-if="!submitting" class="h-5 w-5" />
+            <ArrowRight v-if="!submitting" class="h-4 w-4" />
           </Button>
         </div>
       </form>
