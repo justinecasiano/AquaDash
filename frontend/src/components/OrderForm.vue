@@ -186,7 +186,7 @@ defineExpose({ regenerateRequestId })
           </div>
 
           <div>
-            <label for="phone" class="mb-1.5 block text-sm font-medium text-zinc-700">PH Mobile</label>
+            <label for="phone" class="mb-1.5 block text-sm font-medium text-zinc-700">Mobile Number</label>
             <Input
               id="phone"
               v-model="form.phone"

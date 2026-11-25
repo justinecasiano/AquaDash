@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Builds the Vue 3 static frontend pointing to your live AWS API Gateway Invoke URL.
 .EXAMPLE
