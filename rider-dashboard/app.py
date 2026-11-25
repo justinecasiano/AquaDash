@@ -48,6 +48,21 @@ def create_app(api_client: AquaDashApiClient | None = None) -> Flask:
 
         return wrapped
 
+    def role_required(*allowed_roles: str) -> Callable[..., Any]:
+        def decorator(view: Callable[..., Any]) -> Callable[..., Any]:
+            @wraps(view)
+            def wrapped(*args: Any, **kwargs: Any) -> Any:
+                role = session.get("role")
+                if not role:
+                    return redirect(url_for("login", next=request.full_path.rstrip("?")))
+                if role not in allowed_roles:
+                    return ("Forbidden: insufficient role permissions.", 403)
+                return view(*args, **kwargs)
+
+            return wrapped
+
+        return decorator
+
     @app.get("/health")
     def health():
         return jsonify({"status": "ok"}), 200
@@ -134,7 +149,7 @@ def create_app(api_client: AquaDashApiClient | None = None) -> Flask:
         )
 
     @app.post("/rider/deliver")
-    @login_required
+    @role_required("rider")
     def mark_delivered():
         date_str = (request.form.get("date") or "").strip()
         slot_id = (request.form.get("slot_id") or "").strip()
@@ -156,7 +171,7 @@ def create_app(api_client: AquaDashApiClient | None = None) -> Flask:
         return redirect(url_for("rider_dashboard", date=date_str, slot=slot_id))
 
     @app.get("/owner")
-    @login_required
+    @role_required("owner")
     def owner_dashboard():
         req_date = (request.args.get("date") or "").strip()
         error_message = ""

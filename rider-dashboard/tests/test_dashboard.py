@@ -145,3 +145,30 @@ def test_owner_login_views_slot_capacity_and_logout_revokes_access(flask_client)
     after_logout = client.get("/owner")
     assert after_logout.status_code == 302
     assert "/login" in after_logout.headers["Location"]
+
+
+def test_rider_cannot_access_owner_page(flask_client):
+    client, _ = flask_client
+    client.post("/login", data={"role": "rider", "password": "rider-secret"})
+
+    owner_resp = client.get("/owner")
+    assert owner_resp.status_code == 403
+
+
+def test_owner_has_read_only_orders_and_cannot_mark_delivered(flask_client):
+    client, mock_api = flask_client
+    client.post("/login", data={"role": "owner", "password": "owner-secret"})
+
+    # Owner can inspect slot orders read-only (no Deliver form action)
+    orders_page = client.get("/rider")
+    assert orders_page.status_code == 200
+    assert b"Read-only" in orders_page.data
+    assert b"/rider/deliver" not in orders_page.data
+
+    # Direct POST to mark delivered as Owner is forbidden (403)
+    deliver_resp = client.post(
+        "/rider/deliver",
+        data={"date": "2026-11-23", "slot_id": "13:00-15:00", "order_id": "ord-11112222"},
+    )
+    assert deliver_resp.status_code == 403
+    mock_api.mark_delivered.assert_not_called()
