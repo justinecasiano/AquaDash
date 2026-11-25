@@ -6,9 +6,7 @@ import Button from './components/ui/Button.vue'
 import SlotGrid from './components/SlotGrid.vue'
 import OrderForm from './components/OrderForm.vue'
 import ReceiptCard from './components/ReceiptCard.vue'
-import OwnerCapacityView from './components/OwnerCapacityView.vue'
 
-const activeTab = ref(window.location.hash === '#/capacity' ? 'capacity' : 'order')
 const step = ref(1) // 1 = Pick Slot, 2 = Details, 3 = Confirmed
 const stepTransition = ref('step-forward')
 
@@ -30,16 +28,10 @@ const selectedSlot = computed(() =>
 )
 
 const pageTitle = computed(() => {
-  if (activeTab.value === 'capacity') return 'Slot Capacity'
   if (step.value === 1) return 'Pick a Time'
   if (step.value === 2) return 'Delivery Details'
   return 'All Set'
 })
-
-function setTab(tab) {
-  activeTab.value = tab
-  window.location.hash = tab === 'capacity' ? '#/capacity' : '#/'
-}
 
 function goToStep(nextStep) {
   stepTransition.value = nextStep >= step.value ? 'step-forward' : 'step-back'
@@ -132,12 +124,12 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-zinc-50">
-    <!-- Minimal Glass Topbar -->
+    <!-- Ultra-Minimal Glass Header -->
     <header class="sticky top-0 z-20 border-b border-zinc-200/70 bg-white/85 backdrop-blur-md">
       <div class="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3">
         <button
           type="button"
-          @click="setTab('order'); goToStep(1)"
+          @click="goToStep(1)"
           class="flex items-center gap-2 cursor-pointer"
         >
           <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-600 text-white">
@@ -146,30 +138,15 @@ onMounted(() => {
           <span class="text-base font-bold tracking-tight text-zinc-950">AquaDash</span>
         </button>
 
-        <nav class="inline-flex items-center rounded-lg border border-zinc-200/80 bg-zinc-100/90 p-0.5">
-          <button
-            type="button"
-            @click="setTab('order')"
-            class="rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer"
-            :class="activeTab === 'order' ? 'bg-white text-zinc-950 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900'"
-          >
-            Order
-          </button>
-          <button
-            type="button"
-            @click="setTab('capacity')"
-            class="rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer"
-            :class="activeTab === 'capacity' ? 'bg-white text-zinc-950 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900'"
-          >
-            Capacity
-          </button>
-        </nav>
+        <span class="font-mono text-xs font-medium text-zinc-400">
+          Step {{ step }} / 3
+        </span>
       </div>
     </header>
 
     <main class="mx-auto max-w-xl px-4 py-7 sm:py-10">
-      <!-- Minimal Step Progress Bar (Order Mode) -->
-      <div v-if="activeTab === 'order'" class="mb-5 flex items-center gap-2">
+      <!-- Minimal Step Progress Bar -->
+      <div class="mb-5 flex items-center gap-2">
         <div
           v-for="n in 3"
           :key="n"
@@ -184,7 +161,7 @@ onMounted(() => {
           {{ pageTitle }}
         </h1>
 
-        <div v-if="activeTab === 'capacity' || step === 1" class="flex items-center gap-1.5">
+        <div v-if="step === 1" class="flex items-center gap-1.5">
           <label
             for="delivery-date"
             class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 text-zinc-700 shadow-2xs transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/15"
@@ -194,7 +171,7 @@ onMounted(() => {
               id="delivery-date"
               type="date"
               :value="selectedDate"
-              :min="activeTab === 'order' ? minDate : undefined"
+              :min="minDate"
               @change="handleDateChange"
               class="bg-transparent text-xs font-semibold text-zinc-900 focus:outline-none cursor-pointer"
             />
@@ -214,7 +191,7 @@ onMounted(() => {
 
       <Transition name="fade-slide">
         <div
-          v-if="rolledToTomorrow && activeTab === 'order' && step === 1"
+          v-if="rolledToTomorrow && step === 1"
           class="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2.5 text-sm font-medium text-sky-900"
         >
           Showing tomorrow's open slots ({{ selectedDate }}).
@@ -230,47 +207,35 @@ onMounted(() => {
         </div>
       </Transition>
 
-      <!-- Multi-Step Order Flow vs Capacity View -->
-      <Transition name="fade-slide" mode="out-in">
-        <div v-if="activeTab === 'order'" key="order-flow">
-          <Transition :name="stepTransition" mode="out-in">
-            <SlotGrid
-              v-if="step === 1"
-              key="step-1"
-              :slots="slots"
-              :selected-slot-id="selectedSlotId"
-              :loading="loading"
-              @select="(id) => (selectedSlotId = id)"
-              @next="goToStep(2)"
-            />
-
-            <OrderForm
-              v-else-if="step === 2"
-              key="step-2"
-              ref="orderFormRef"
-              :selected-date="selectedDate"
-              :selected-slot="selectedSlot"
-              :submitting="submitting"
-              :error-message="submitError"
-              @back="goToStep(1)"
-              @submit="handleOrderSubmit"
-            />
-
-            <ReceiptCard
-              v-else-if="step === 3 && confirmedOrder"
-              key="step-3"
-              :order="confirmedOrder"
-              @new-order="handleNewOrder"
-            />
-          </Transition>
-        </div>
-
-        <OwnerCapacityView
-          v-else
-          key="capacity-view"
-          :selected-date="selectedDate"
+      <!-- Multi-Step Order Flow -->
+      <Transition :name="stepTransition" mode="out-in">
+        <SlotGrid
+          v-if="step === 1"
+          key="step-1"
           :slots="slots"
+          :selected-slot-id="selectedSlotId"
           :loading="loading"
+          @select="(id) => (selectedSlotId = id)"
+          @next="goToStep(2)"
+        />
+
+        <OrderForm
+          v-else-if="step === 2"
+          key="step-2"
+          ref="orderFormRef"
+          :selected-date="selectedDate"
+          :selected-slot="selectedSlot"
+          :submitting="submitting"
+          :error-message="submitError"
+          @back="goToStep(1)"
+          @submit="handleOrderSubmit"
+        />
+
+        <ReceiptCard
+          v-else-if="step === 3 && confirmedOrder"
+          key="step-3"
+          :order="confirmedOrder"
+          @new-order="handleNewOrder"
         />
       </Transition>
     </main>
