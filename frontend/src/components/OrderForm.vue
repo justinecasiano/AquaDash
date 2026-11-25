@@ -26,8 +26,6 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'back'])
 
-const quickQuantities = [1, 2, 3, 5]
-
 function makeRequestId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID().replace(/-/g, '').slice(0, 20)
@@ -132,51 +130,35 @@ defineExpose({ regenerateRequestId })
       </Transition>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
-        <!-- 5-Gallon Jugs -->
-        <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 px-3.5 py-2.5">
-          <span class="text-sm font-semibold text-zinc-800">5-Gallon Jugs</span>
+        <!-- Quantity Stepper -->
+        <div class="flex items-center justify-between gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 px-3.5 py-2.5">
+          <div>
+            <span class="text-sm font-semibold text-zinc-800">Quantity</span>
+            <span class="ml-1.5 text-xs text-zinc-400">5-gal container</span>
+          </div>
 
-          <div class="flex items-center gap-2">
-            <div class="hidden items-center gap-1 sm:flex">
-              <button
-                v-for="q in quickQuantities"
-                :key="q"
-                type="button"
-                @click="form.quantity = q"
-                class="h-8 w-8 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer"
-                :class="
-                  form.quantity === q
-                    ? 'bg-sky-600 text-white shadow-2xs'
-                    : 'bg-white text-zinc-600 border border-zinc-200 hover:text-zinc-950'
-                "
-              >
-                {{ q }}
-              </button>
-            </div>
-
-            <div class="inline-flex items-center rounded-lg border border-zinc-200 bg-white p-0.5">
-              <button
-                type="button"
-                @click="adjustQty(-1)"
-                :disabled="form.quantity <= 1"
-                class="flex h-8 w-8 items-center justify-center rounded-md text-zinc-700 transition hover:bg-zinc-100 active:scale-95 disabled:opacity-35 cursor-pointer"
-                aria-label="Decrease"
-              >
-                <Minus class="h-3.5 w-3.5" />
-              </button>
-              <span class="min-w-[2.25rem] text-center text-sm font-bold text-zinc-950">
-                {{ form.quantity }}
-              </span>
-              <button
-                type="button"
-                @click="adjustQty(1)"
-                :disabled="form.quantity >= 20"
-                class="flex h-8 w-8 items-center justify-center rounded-md text-zinc-700 transition hover:bg-zinc-100 active:scale-95 disabled:opacity-35 cursor-pointer"
-                aria-label="Increase"
-              >
-                <Plus class="h-3.5 w-3.5" />
-              </button>
-            </div>
+          <div class="inline-flex items-center rounded-lg border border-zinc-200 bg-white p-0.5">
+            <button
+              type="button"
+              @click="adjustQty(-1)"
+              :disabled="form.quantity <= 1"
+              class="flex h-8 w-8 items-center justify-center rounded-md text-zinc-700 transition hover:bg-zinc-100 active:scale-95 disabled:opacity-35 cursor-pointer"
+              aria-label="Decrease"
+            >
+              <Minus class="h-3.5 w-3.5" />
+            </button>
+            <span class="min-w-[2.5rem] text-center font-mono text-sm font-bold text-zinc-950">
+              {{ form.quantity }}
+            </span>
+            <button
+              type="button"
+              @click="adjustQty(1)"
+              :disabled="form.quantity >= 20"
+              class="flex h-8 w-8 items-center justify-center rounded-md text-zinc-700 transition hover:bg-zinc-100 active:scale-95 disabled:opacity-35 cursor-pointer"
+              aria-label="Increase"
+            >
+              <Plus class="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
 
@@ -247,11 +229,7 @@ defineExpose({ regenerateRequestId })
           >
             <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
             <span>
-              {{
-                submitting
-                  ? 'Placing Order...'
-                  : `Place Order · ${form.quantity} ${form.quantity === 1 ? 'Jug' : 'Jugs'}`
-              }}
+              {{ submitting ? 'Placing Order...' : `Place Order (${form.quantity} × 5-gal)` }}
             </span>
             <ArrowRight v-if="!submitting" class="h-4 w-4" />
           </Button>
