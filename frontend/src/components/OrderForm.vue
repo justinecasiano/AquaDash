@@ -59,6 +59,16 @@ function adjustQty(delta) {
   }
 }
 
+const PH_PHONE_CHARS = /^[0-9+\-\s]+$/
+const PH_MOBILE_REGEX = /^(?:09|\+?639)\d{9}$/
+
+function isValidPhMobile(raw) {
+  const cleaned = raw.trim()
+  if (!cleaned || !PH_PHONE_CHARS.test(cleaned)) return false
+  const compact = cleaned.replace(/[\s-]/g, '')
+  return PH_MOBILE_REGEX.test(compact)
+}
+
 function handleSubmit() {
   localError.value = ''
 
@@ -70,8 +80,8 @@ function handleSubmit() {
     localError.value = 'Enter your name.'
     return
   }
-  if (form.phone.trim().length < 7) {
-    localError.value = 'Enter a valid mobile number.'
+  if (!isValidPhMobile(form.phone)) {
+    localError.value = 'Enter a valid PH mobile number (e.g., 0917 123 4567 or +63 917 123 4567).'
     return
   }
   if (form.address.trim().length < 5) {
@@ -176,12 +186,13 @@ defineExpose({ regenerateRequestId })
           </div>
 
           <div>
-            <label for="phone" class="mb-1.5 block text-sm font-medium text-zinc-700">Phone</label>
+            <label for="phone" class="mb-1.5 block text-sm font-medium text-zinc-700">PH Mobile</label>
             <Input
               id="phone"
               v-model="form.phone"
               type="tel"
-              maxlength="20"
+              inputmode="tel"
+              maxlength="16"
               required
               placeholder="0917 123 4567"
             />

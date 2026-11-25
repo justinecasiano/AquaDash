@@ -161,12 +161,50 @@ def test_validation_rejects_bad_inputs(ddb_client):
         {"address": "A" * 305},
         {"customer_name": "X"},
         {"phone": "abc"},
+        {"phone": "0917123456"},       # 10 digits (too short)
+        {"phone": "091712345678"},     # 12 digits (too long)
+        {"phone": "08171234567"},      # not starting with 09
+        {"phone": "0281234567"},       # landline, not mobile
+        {"phone": "+14155552671"},     # non-PH country code
+        {"phone": "+6309171234567"},   # extra leading zero after +63
+        {"phone": "0917-123-456a"},    # non-digit character
         {"slot_id": "23:00-24:00"},
     ]:
         payload = _order_payload()
         payload.update(bad_fields)
         resp = handler.handle_request(make_event("POST", "/orders", body=payload), now=morning, dynamodb_client=ddb_client)
         assert resp["statusCode"] == 400
+
+
+def test_ph_mobile_formats_accepted_and_normalized(ddb_client):
+    morning = datetime(2026, 11, 23, 8, 0, tzinfo=PHT)
+    valid_phones = [
+        "09171234567",
+        "0917 123 4567",
+        "0917-123-4567",
+        "+639171234567",
+        "+63 917 123 4567",
+        "639171234567",
+    ]
+    for idx, phone in enumerate(valid_phones, start=1):
+        payload = _order_payload(idx=idx, client_request_id=f"ph-phone-test-{idx:02d}")
+        payload["phone"] = phone
+        resp = handler.handle_request(make_event("POST", "/orders", body=payload), now=morning, dynamodb_client=ddb_client)
+        assert resp["statusCode"] == 201, f"Valid PH phone rejected: {phone} -> {resp}"
+
+    rider_resp = handler.handle_request(
+        make_event(
+            "GET",
+            "/rider/orders",
+            query={"date": "2026-11-23", "slot": "08:00-10:00"},
+            headers={"X-Staff-Api-Key": STAFF_KEY},
+        ),
+        now=morning,
+        dynamodb_client=ddb_client,
+    )
+    orders = json.loads(rider_resp["body"])["orders"]
+    assert len(orders) == len(valid_phones)
+    assert all(o["phone"] == "09171234567" for o in orders)
 
 
 def test_mark_delivered_idempotent_late_delivery_and_404(ddb_client):

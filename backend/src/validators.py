@@ -17,7 +17,8 @@ from config import (
 )
 
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-PHONE_PATTERN = re.compile(r"^[0-9+\-\s()]{7,20}$")
+PH_PHONE_CHARS = re.compile(r"^[0-9+\-\s]+$")
+PH_MOBILE_PATTERN = re.compile(r"^(?:09|\+?639)\d{9}$")
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
 
 
@@ -58,6 +59,29 @@ def _clean_text(value: Any) -> str:
     return " ".join(value.strip().split())
 
 
+def validate_ph_mobile(raw_phone: Any) -> str:
+    """Validate and normalize a Philippine mobile number to 11-digit 09XXXXXXXXX format."""
+    cleaned = _clean_text(raw_phone)
+    if not cleaned or not PH_PHONE_CHARS.match(cleaned):
+        raise ValidationError(
+            "Enter a valid Philippine mobile number (e.g., 0917 123 4567 or +63 917 123 4567).",
+            code="INVALID_PHONE",
+        )
+
+    compact = re.sub(r"[\s\-]", "", cleaned)
+    if not PH_MOBILE_PATTERN.match(compact):
+        raise ValidationError(
+            "Enter a valid 11-digit Philippine mobile number starting with 09 or +639.",
+            code="INVALID_PHONE",
+        )
+
+    if compact.startswith("+63"):
+        return "0" + compact[3:]
+    if compact.startswith("63"):
+        return "0" + compact[2:]
+    return compact
+
+
 def validate_order_payload(body: Any, now: datetime | None = None) -> dict[str, Any]:
     if not isinstance(body, dict):
         raise ValidationError("Request body must be a JSON object.")
@@ -86,9 +110,7 @@ def validate_order_payload(body: Any, now: datetime | None = None) -> dict[str, 
     if len(address) < 5 or len(address) > 300:
         raise ValidationError("Home address must be between 5 and 300 characters.")
 
-    phone = _clean_text(body.get("phone"))
-    if not PHONE_PATTERN.match(phone):
-        raise ValidationError("Please enter a valid contact number (7-20 digits).")
+    phone = validate_ph_mobile(body.get("phone"))
 
     raw_qty = body.get("quantity")
     if isinstance(raw_qty, bool) or not isinstance(raw_qty, int):
